@@ -1,0 +1,11 @@
+{
+  "owner": "jelilat",
+  "slug": "shopify-checkout",
+  "displayName": "Shopify Checkout API",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772203505073,
+    "commit": null
+  },
+  "history": []
+}
