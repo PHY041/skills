@@ -1,74 +1,66 @@
-# 📈 每日股票投资分析报告
+# 📈 A 股每日投资报告 Pro
 
-自动化股票信息收集和投资分析系统。
+> ⚠️ **重要声明：本技能仅供个人学习和研究使用，不构成任何投资建议。股市有风险，投资需谨慎。**
 
 ## 快速开始
 
 ### 1. 安装
 
 ```bash
+# 使用 clawhub 安装
 clawhub install stock-daily-report
 ```
 
-### 2. 配置自选股
+### 2. 配置
+
+编辑 `config.json`：
+```json
+{
+  "stocks": [
+    {"code": "600519", "name": "贵州茅台"}
+  ],
+  "output_dir": "/tmp",
+  "output_format": "both"
+}
+```
+
+### 3. 运行
 
 ```bash
-# 编辑自选股列表
-nano ~/.clawdbot/stock_watcher/watchlist.txt
+# 生成 HTML + 长图片
+python3 generate_report.py --format both
+
+# 指定股票
+python3 generate_report.py --stocks 002973,600095 --format both
 ```
 
-格式：`代码 | 名称`
-```
-002973|侨银股份
-600095|湘财股份
-000973|佛塑科技
-513180|恒生科技 ETF
-```
+## 功能特性
 
-### 3. 设置定时任务
+- ✅ 实时股票数据（新浪财经 API）
+- ✅ K 线图（嵌入 HTML，可离线查看）
+- ✅ 技术指标（KDJ/MACD/量比/换手率）
+- ✅ 操作建议（评级/目标价/止损价）
+- ✅ 精简新闻（国际 + 国内）
+- ✅ 长图片输出（方便分享）
 
-```bash
-crontab -e
-```
+## 输出示例
 
-添加：
-```bash
-# 股票日报（周一到周五 9:25）
-25 9 * * 1-5 /root/.openclaw/workspace/skills/stock-daily-report/daily-stock-report.sh
-```
-
-### 4. 测试运行
-
-```bash
-bash /root/.openclaw/workspace/skills/stock-daily-report/daily-stock-report.sh
-```
-
-## 查看报告
-
-报告保存在：`/tmp/stock-report-YYYYMMDD.md`
-
-```bash
-# 查看今日报告
-cat /tmp/stock-report-$(date +%Y%m%d).md
-
-# 查看历史报告
-ls -la /tmp/stock-report-*.md
-```
-
-## 功能特点
-
-- ✅ 自动收集股票行情
-- ✅ 生成投资建议
-- ✅ Markdown 格式报告
-- ✅ 定时自动执行
-- ✅ 可配置自选股
+生成的 HTML/PNG 报告包含：
+- 市场概览（油价、黄金、美元指数）
+- 地缘政治风险提示
+- 国际/国内重要新闻
+- 个股深度分析（K 线图 + 技术指标 + 操作建议）
 
 ## 依赖
 
-- Python 3
-- requests
-- beautifulsoup4
+- Python 3.6+
+- matplotlib
+- pyppeteer（可选，用于图片生成）
 
 ## 许可证
 
 MIT
+
+---
+
+**免责声明：本报告仅供参考，不构成投资建议。股市有风险，投资需谨慎。**

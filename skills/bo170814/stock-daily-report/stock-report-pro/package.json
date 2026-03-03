@@ -1,8 +1,0 @@
-{
-  "name": "stock-report-pro",
-  "version": "1.0.0",
-  "description": "A 股每日投资分析报告 Pro - 专业级股票投资分析报告生成器",
-  "keywords": ["stock", "analysis", "report", "china"],
-  "author": "ivan lee",
-  "license": "MIT"
-}

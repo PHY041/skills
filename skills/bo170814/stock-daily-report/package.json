@@ -1,8 +1,0 @@
-{
-  "name": "stock-daily-report",
-  "version": "1.0.0",
-  "description": "A 股每日投资分析报告 - 自动生成 K 线图、技术指标、市场分析",
-  "keywords": ["stock", "daily", "report", "analysis", "china"],
-  "author": "ivan lee",
-  "license": "MIT"
-}
