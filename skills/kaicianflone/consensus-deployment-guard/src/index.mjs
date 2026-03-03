@@ -11,7 +11,7 @@ import {
   aggregateVotes,
     makeIdempotencyKey,
   resolveStatePath
-} from 'consensus-guard-core/src/index.mjs';
+} from 'consensus-guard-core';
 
 const TOP = new Set(['board_id', 'proposed_deployment', 'constraints', 'persona_set_id', 'mode', 'external_votes']);
 const VOTE = new Set(['persona_id', 'name', 'reputation_before', 'vote', 'confidence', 'reasons', 'red_flags', 'suggested_edits']);

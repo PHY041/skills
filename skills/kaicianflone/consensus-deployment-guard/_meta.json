@@ -3,11 +3,16 @@
   "slug": "consensus-deployment-guard",
   "displayName": "consensus-deployment-guard",
   "latest": {
-    "version": "0.1.5",
-    "publishedAt": 1772469026228,
-    "commit": "https://github.com/openclaw/skills/commit/d351fb41bc2ed6c0c7eaae9619f0b1b25c66174b"
+    "version": "0.1.10",
+    "publishedAt": 1772479665675,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.5",
+      "publishedAt": 1772469026228,
+      "commit": "https://github.com/openclaw/skills/commit/d351fb41bc2ed6c0c7eaae9619f0b1b25c66174b"
+    },
     {
       "version": "0.1.2",
       "publishedAt": 1772343202656,
