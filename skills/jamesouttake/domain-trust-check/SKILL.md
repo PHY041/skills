@@ -70,3 +70,7 @@ Use batch when checking 3+ URLs to reduce round trips. Requests with more than 5
 ## Related Skills
 
 - **[outtake-bounty-network](https://clawhub.ai/skill/outtake-bounty-network)** — Earn $5 USDC per verified malicious domain. Scan with trust-check, then submit confirmed threats. Same API key.
+
+## Support
+
+Questions or feedback? Email [trust-check@outtake.ai](mailto:trust-check@outtake.ai)
