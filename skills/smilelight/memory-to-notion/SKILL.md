@@ -89,12 +89,26 @@ Do NOT guess -- follow these mappings exactly.
 - Structured query for dedup is **not available** in MCP. Use semantic search as fallback:
   `notion-search` with `data_source_url: "collection://<data_source_id>"` and keywords from the candidate memory.
   Then `notion-fetch` each result to compare full properties.
+- **Do NOT parallel-call** multiple `notion-search` against the same `data_source_url` -- MCP will error.
+  When deduping multiple candidate memories, run searches sequentially. Deduplicate results by page id before fetching.
 - `notion-create-database` uses SQL DDL syntax, not JSON. See Database Creation section for the DDL.
 
-### OpenClaw / Direct API Access
+### OpenClaw
 
-Use Notion REST API exactly as described in the workflow steps. All operations including
-structured query for dedup are fully supported.
+OpenClaw accesses Notion through a separately installed **"notion" skill**
+([clawhub.ai/steipete/notion](https://clawhub.ai/steipete/notion)).
+This skill must be installed before using memory-to-notion.
+
+When executing, first read the notion skill's SKILL.md to learn the Notion API access patterns
+(API key setup, curl commands, endpoints). Then follow this workflow using those patterns.
+
+- All operations described in this skill (search, query, create page, update page, create database)
+  map directly to the notion skill's REST API patterns
+- All operations including structured query for dedup are fully supported
+
+**Important**: This skill (memory-to-notion) is a **workflow skill** that depends on Notion
+connectivity. It does NOT provide Notion access itself -- it relies on the platform's Notion
+integration (MCP tools on Claude Code/Claude.ai, notion skill on OpenClaw).
 
 ## Workflow
 
@@ -138,7 +152,8 @@ POST /v1/data_sources/{data_source_id}/query
 
 > **MCP platforms (Claude Code / Claude.ai):** Structured query is not available.
 > Use `notion-search` with `data_source_url: "collection://<data_source_id>"` and keywords
-> from the candidate memory as query. Then `notion-fetch` each result to compare properties.
+> from the candidate memory as query. Run dedup searches **sequentially** (not in parallel).
+> Deduplicate results by page id across searches, then `notion-fetch` only unique results to compare properties.
 
 The query returns full page properties. Check for:
 1. **Duplicates**: Same fact already stored -> skip

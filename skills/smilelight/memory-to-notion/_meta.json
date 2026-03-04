@@ -3,11 +3,16 @@
   "slug": "memory-to-notion",
   "displayName": "memory-to-notion",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1772614410142,
-    "commit": "https://github.com/openclaw/skills/commit/bf8d99c1ce427d3c21a023bde7576c25807e9425"
+    "version": "1.0.4",
+    "publishedAt": 1772634983072,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1772614410142,
+      "commit": "https://github.com/openclaw/skills/commit/bf8d99c1ce427d3c21a023bde7576c25807e9425"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1772456478409,
