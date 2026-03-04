@@ -1,8 +1,8 @@
 ---
 name: clawusage
 description: Run local clawusage monitoring commands from chat. Use when user types `/clawusage ...` or asks to check Codex usage, enable/disable auto idle alerts, set idle reminder threshold, or switch language with `lang english|chinese`.
-user-invocable: true
-disable-model-invocation: false
+user-invocable: false
+disable-model-invocation: true
 ---
 
 # ClawUsage Chat Command
@@ -16,6 +16,7 @@ Command source:
 Supported arguments:
 
 - `now`
+- `usage`
 - `status`
 - `help`
 - `lang`
@@ -25,12 +26,13 @@ Supported arguments:
 - `auto off`
 - `auto set <minutes>`
 - `auto status`
+- `doctor`
 - `-help`
 
 Execution rules:
 
 1. Parse user input after `/clawusage`.
-2. If no argument is provided, default to `status`.
+2. If no argument is provided, default to `usage`.
 3. Run exactly one local command via shell:
    - `& clawusage.cmd <args>`
 4. Do not run unrelated commands.
@@ -38,6 +40,7 @@ Execution rules:
 6. Input normalization:
    - map `help` to `-help`
    - allow `10m` style minutes for `auto on` / `auto set` (strip trailing `m`)
+   - map `now` / `status` to `usage` (single-command UX)
 
 Formatting rules (important):
 
@@ -50,7 +53,7 @@ Formatting rules (important):
 
 Output templates:
 
-1) For `now` / `status`, use:
+1) For `now` / `status` / `usage`, use:
 
 ```text
 ClawUsage
@@ -73,7 +76,7 @@ Local:
 - 7d: <...>
 ```
 
-2) For `auto on/off/set/status`, `help`, `lang`, use:
+2) For `auto on/off/set/status`, `help`, `lang`, `doctor`, use:
 
 ```text
 ClawUsage
@@ -94,3 +97,5 @@ Status: error
 Details:
 <short actionable error>
 ```
+
+
