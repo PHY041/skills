@@ -1,0 +1,11 @@
+{
+  "owner": "jessewunderlich",
+  "slug": "host-security-audit",
+  "displayName": "Host Security Audit",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772501728207,
+    "commit": null
+  },
+  "history": []
+}
