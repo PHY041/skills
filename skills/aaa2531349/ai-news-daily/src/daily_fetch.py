@@ -1,419 +1,539 @@
 """
-AI News Aggregator - 国内 AI 媒体抓取（改进版）
-优化点：
-1. 更严格的AI相关性判断（标题必须含AI关键词）
-2. 过滤综合早报/晨报类文章
-3. 抓取正文获取真实摘要
-4. 按AI相关度排序
+AI News Aggregator v2.1
+改进：
+1. 外部配置（config.yaml）
+2. 保存完整原始内容，确保AI能生成200-250字摘要
+3. 失败重试机制
+4. 更好的日志记录
 """
 import requests
 import feedparser
 import json
 import re
+import os
+import sqlite3
+import yaml
+import logging
+import time
 from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
+from urllib.parse import urlparse, urljoin
+from difflib import SequenceMatcher
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# 国内 AI 媒体源
-SOURCES = {
-    "qbitai": {
-        "name": "量子位",
-        "rss": "https://www.qbitai.com/feed",
-        "type": "rss"
+# 尝试导入可选依赖
+try:
+    import trafilatura
+    USE_TRAFILATURA = True
+except ImportError:
+    USE_TRAFILATURA = False
+
+from bs4 import BeautifulSoup
+from generate_summary import generate_summary
+
+# 默认配置
+DEFAULT_CONFIG = {
+    'fetch': {'max_workers': 4, 'request_timeout': 15, 'max_retries': 3, 'retry_delay': 2},
+    'date_range': {'days_back': 1},
+    'output': {'top_n': 10, 'save_raw_content': True, 'raw_content_length': 3000},
+    'summary': {'target_min': 200, 'target_max': 250, 'generate_by': 'ai'},
+    'push': {
+        'openclaw': {'enabled': True, 'output_file': 'data/openclaw_message.txt', 'format': 'markdown'},
+        'telegram': {'enabled': False, 'bot_token': '', 'channel_id': ''},
+        'discord': {'enabled': False, 'webhook_url': ''}
     },
-    "jiqizhixin": {
-        "name": "机器之心",
-        "rss": "https://www.jiqizhixin.com/rss",
-        "type": "rss"
-    },
-    "infoq": {
-        "name": "InfoQ",
-        "rss": "https://www.infoq.cn/feed",
-        "type": "rss"
-    },
-    "36kr": {
-        "name": "36氪",
-        "rss": "https://36kr.com/feed",
-        "type": "rss"
-    },
-    "leiphone": {
-        "name": "雷锋网",
-        "rss": "https://www.leiphone.com/feed",
-        "type": "rss"
-    },
-    "tmtpost": {
-        "name": "钛媒体",
-        "rss": "https://www.tmtpost.com/feed",
-        "type": "rss"
-    },
-    "aiera": {
-        "name": "新智元",
-        "url": "https://www.aiera.com.cn",
-        "type": "web"
-    }
+    'logging': {'level': 'INFO', 'file': 'data/fetch.log', 'max_size_mb': 10, 'backup_count': 5}
 }
 
-# AI核心关键词 - 标题必须包含这些才算AI新闻
-AI_CORE_KEYWORDS = [
-    "AI", "人工智能", "机器学习", "深度学习", "大模型", "LLM", 
-    "神经网络", "GPT", "ChatGPT", "Claude", "OpenAI", "文心一言", 
-    "通义千问", "智谱", "GLM", "月之暗面", "Kimi", "DeepSeek", 
-    "人形机器人", "具身智能", "自动驾驶", "无人驾驶", "算力", 
-    "芯片", "英伟达", "NVIDIA", "GPU", "TPU", "AI芯片",
-    "生成式AI", "AIGC", "多模态", "Agent", "智能体", "AGI"
+# 新闻源权重
+SOURCE_WEIGHTS = {
+    "量子位": 1.3, "机器之心": 1.3, "36氪": 1.3, "新智元": 1.3, 
+    "智东西": 1.3, "InfoQ": 1.3,
+    "雷锋网": 1.1, "钛媒体": 1.1, "AI科技评论": 1.1, "极客公园": 1.1,
+    "虎嗅": 1.0,
+    "TechCrunch AI": 1.2, "The Verge AI": 1.2, "MIT Tech Review": 1.2,
+}
+
+# RSS 新闻源
+SOURCES = {
+    "qbitai": {"name": "量子位", "rss": "https://www.qbitai.com/feed", "type": "rss"},
+    "jiqizhixin": {"name": "机器之心", "rss": "https://www.jiqizhixin.com/rss", "type": "rss"},
+    "infoq": {"name": "InfoQ", "rss": "https://www.infoq.cn/feed", "type": "rss"},
+    "36kr": {"name": "36氪", "rss": "https://36kr.com/feed", "type": "rss"},
+    "leiphone": {"name": "雷锋网", "rss": "https://www.leiphone.com/feed", "type": "rss"},
+    "tmtpost": {"name": "钛媒体", "rss": "https://www.tmtpost.com/feed", "type": "rss"},
+    "zhidx": {"name": "智东西", "rss": "https://www.zhidx.com/feed", "type": "rss"},
+    "geekpark": {"name": "极客公园", "rss": "https://www.geekpark.net/rss", "type": "rss"},
+    "huxiu": {"name": "虎嗅", "rss": "https://www.huxiu.com/rss", "type": "rss"},
+    "techcrunch_ai": {"name": "TechCrunch AI", "rss": "https://techcrunch.com/category/artificial-intelligence/feed/", "type": "rss"},
+    "theverge_ai": {"name": "The Verge AI", "rss": "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml", "type": "rss"},
+    "mit_tech_review": {"name": "MIT Tech Review", "rss": "https://www.technologyreview.com/feed/", "type": "rss"},
+}
+
+# AI 核心关键词
+AI_KEYWORDS = [
+    "AI", "人工智能", "机器学习", "深度学习", "大模型", "LLM", "神经网络", 
+    "多模态", "Agent", "智能体", "AGI", "生成式AI", "AIGC", "具身智能",
+    "GPT", "ChatGPT", "OpenAI", "o1", "o3", "GPT-4", "GPT-5", "Sora", "DALL-E",
+    "Claude", "Anthropic", "Gemini", "Google AI", "Bard", "PaLM",
+    "Llama", "Meta AI", "文心一言", "文心大模型", "通义千问", "通义", "Qwen",
+    "智谱", "GLM", "ChatGLM", "月之暗面", "Kimi", "DeepSeek", "豆包", "字节AI",
+    "混元", "腾讯AI", "Mistral", "Grok", "xAI", "Perplexity", "Midjourney",
+    "Stable Diffusion", "Copilot", "GitHub Copilot", "人形机器人", "自动驾驶",
+    "算力", "芯片", "英伟达", "NVIDIA", "GPU", "AI芯片", "H100", "H200"
 ]
 
-# 次要关键词 - 用于辅助判断
-AI_SECONDARY_KEYWORDS = [
-    "百度", "阿里", "腾讯", "字节", "华为", "小米", "商汤", 
-    "旷视", "依图", "云从", "寒武纪", "地平线", "融资", "IPO", "财报"
-]
-
-# 需要过滤的标题模式（综合早报、娱乐八卦等）
-FILTER_PATTERNS = [
-    r'早报|晨报|晚报|日报',  # 综合新闻
-    r'要闻提示|今日头条',  # 杂烩新闻
-    r'降价|被骂|骂惨',  # 情绪标题
-    r'游戏|电竞|手游',  # 游戏新闻（除非明确AI相关）
-    r'明星|娱乐|八卦',  # 娱乐新闻
-]
+FILTER_PATTERNS = [r'早报|晨报|晚报|日报', r'要闻提示|今日头条', r'降价|被骂|骂惨', r'游戏|电竞|手游', r'明星|娱乐|八卦']
 
 
-def is_ai_related(title, summary=""):
-    """
-    严格检查是否与 AI 相关
-    要求：标题必须包含核心AI关键词
-    """
-    title_lower = title.lower()
+def load_config():
+    """加载配置文件"""
+    config_path = 'config/config.yaml'
+    config = DEFAULT_CONFIG.copy()
     
-    # 先过滤掉明显不是AI新闻的标题模式
-    for pattern in FILTER_PATTERNS:
-        if re.search(pattern, title):
-            # 但如果同时有强AI关键词，保留
-            has_strong_ai = any(kw.lower() in title_lower for kw in AI_CORE_KEYWORDS)
-            if not has_strong_ai:
-                return False, 0
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                user_config = yaml.safe_load(f)
+                if user_config:
+                    # 深度合并配置
+                    for key, value in user_config.items():
+                        if isinstance(value, dict) and key in config:
+                            config[key].update(value)
+                        else:
+                            config[key] = value
+        except Exception as e:
+            print(f"[配置警告] 读取 config.yaml 失败: {e}, 使用默认配置")
     
-    # 标题必须包含核心AI关键词
-    core_matches = sum(1 for kw in AI_CORE_KEYWORDS if kw.lower() in title_lower)
+    # 从环境变量读取敏感配置
+    if not config['push']['telegram']['bot_token']:
+        config['push']['telegram']['bot_token'] = os.getenv('TELEGRAM_BOT_TOKEN', '')
+    if not config['push']['telegram']['channel_id']:
+        config['push']['telegram']['channel_id'] = os.getenv('TELEGRAM_CHANNEL_ID', '')
+    if not config['push']['discord']['webhook_url']:
+        config['push']['discord']['webhook_url'] = os.getenv('DISCORD_WEBHOOK_URL', '')
     
-    if core_matches == 0:
-        return False, 0
-    
-    # 计算相关度分数
-    score = core_matches * 10
-    
-    # 次要关键词加分
-    summary_lower = summary.lower()
-    for kw in AI_SECONDARY_KEYWORDS:
-        if kw.lower() in title_lower:
-            score += 3
-        if kw.lower() in summary_lower:
-            score += 1
-    
-    return True, score
+    return config
 
 
-def is_yesterday(published_str):
-    """检查是否是昨天的文章"""
+def setup_logging(config):
+    """设置日志"""
+    log_level = getattr(logging, config['logging']['level'].upper(), logging.INFO)
+    log_file = config['logging']['file']
+    
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file, encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+    return logging.getLogger(__name__)
+
+
+class NewsDatabase:
+    """SQLite 数据库管理 - v2.1 改进版，保存原始内容"""
+    
+    def __init__(self, db_path='data/news.db'):
+        self.db_path = db_path
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self.init_db()
+    
+    def init_db(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # 文章表 - 增加 raw_content 字段保存完整原始内容
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS articles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                url TEXT UNIQUE NOT NULL,
+                normalized_url TEXT NOT NULL,
+                title TEXT NOT NULL,
+                source TEXT NOT NULL,
+                summary TEXT,
+                raw_content TEXT,           -- 新增：保存完整原始内容
+                score INTEGER,
+                fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_normalized_url ON articles(normalized_url)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_fetched_at ON articles(fetched_at)')
+        conn.commit()
+        conn.close()
+    
+    def exists(self, normalized_url):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1 FROM articles WHERE normalized_url = ?', (normalized_url,))
+        result = cursor.fetchone() is not None
+        conn.close()
+        return result
+    
+    def get_article(self, normalized_url):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, url, title, source, summary, raw_content, score 
+            FROM articles 
+            WHERE normalized_url = ?
+        ''', (normalized_url,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return {
+                'id': row[0], 'url': row[1], 'title': row[2], 'source': row[3],
+                'summary': row[4], 'raw_content': row[5], 'score': row[6]
+            }
+        return None
+    
+    def save_article(self, url, normalized_url, title, source, summary, raw_content, score):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT OR REPLACE INTO articles 
+                (url, normalized_url, title, source, summary, raw_content, score, fetched_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (url, normalized_url, title, source, summary, raw_content, score))
+            article_id = cursor.lastrowid
+            conn.commit()
+            return article_id
+        except Exception as e:
+            logging.error(f"[DB] 保存失败: {e}")
+            return None
+        finally:
+            conn.close()
+
+
+class NewsDeduplicator:
+    """新闻去重器"""
+    
+    def __init__(self, db, threshold=0.35):
+        self.db = db
+        self.seen_urls = set()
+        self.seen_articles = []
+        self.threshold = threshold
+    
+    def normalize_url(self, url):
+        try:
+            parsed = urlparse(url)
+            netloc = parsed.netloc.replace('www.', '')
+            path = parsed.path.rstrip('/')
+            return f"{netloc}{path}".lower()
+        except:
+            return url.lower()
+    
+    def text_similarity(self, text1, text2):
+        t1 = re.sub(r'\s+', '', text1.lower())
+        t2 = re.sub(r'\s+', '', text2.lower())
+        if not t1 or not t2:
+            return 0.0
+        return SequenceMatcher(None, t1, t2).ratio()
+    
+    def is_duplicate(self, url, title, summary=""):
+        norm_url = self.normalize_url(url)
+        
+        if norm_url in self.seen_urls:
+            return True, None
+        
+        for seen_title, seen_summary in self.seen_articles:
+            if self.text_similarity(title, seen_title) > self.threshold:
+                return True, None
+            if summary and seen_summary:
+                if self.text_similarity(summary, seen_summary) > self.threshold:
+                    return True, None
+        
+        article = self.db.get_article(norm_url)
+        if article:
+            return True, article
+        
+        self.seen_urls.add(norm_url)
+        self.seen_articles.append((title, summary))
+        return False, None
+
+
+def fetch_with_retry(url, headers, timeout, max_retries, delay):
+    """带重试的请求"""
+    for attempt in range(max_retries):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            resp.raise_for_status()
+            return resp
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                logging.warning(f"请求失败 ({attempt+1}/{max_retries}): {url}, 错误: {e}")
+                time.sleep(delay * (attempt + 1))  # 指数退避
+            else:
+                logging.error(f"请求最终失败: {url}, 错误: {e}")
+                raise
+    return None
+
+
+def fetch_article_content(url, source_name, config):
+    """抓取文章正文 - 保存完整内容供AI生成摘要"""
     try:
-        from email.utils import parsedate_to_datetime
-        dt = parsedate_to_datetime(published_str)
-        yesterday = datetime.now() - timedelta(days=1)
-        return dt.date() == yesterday.date()
-    except:
-        # 如果日期解析失败，默认包含（让内容筛选来决定）
-        return True
-
-
-def fetch_article_content(url, source_name):
-    """
-    抓取文章正文，提取真实摘要
-    """
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        resp = requests.get(url, headers=headers, timeout=15)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        timeout = config['fetch']['request_timeout']
+        max_retries = config['fetch']['max_retries']
+        delay = config['fetch']['retry_delay']
+        
+        # 使用 trafilatura 抓取
+        if USE_TRAFILATURA:
+            try:
+                downloaded = trafilatura.fetch_url(url)
+                if downloaded:
+                    text = trafilatura.extract(
+                        downloaded, include_comments=False,
+                        include_tables=False, no_fallback=True, target_language='zh'
+                    )
+                    if text and len(text) > 100:
+                        return text[:config['output']['raw_content_length']]
+            except Exception as e:
+                logging.warning(f"[trafilatura] 抓取失败 {source_name}: {e}")
+        
+        # 备用：BeautifulSoup
+        resp = fetch_with_retry(url, headers, timeout, max_retries, delay)
         resp.encoding = resp.apparent_encoding or 'utf-8'
         soup = BeautifulSoup(resp.text, 'html.parser')
         
-        # 移除脚本和样式
-        for script in soup(["script", "style", "nav", "header", "footer"]):
-            script.decompose()
+        # 移除无关元素
+        for elem in soup(["script", "style", "nav", "header", "footer", "aside"]):
+            elem.decompose()
         
-        # 尝试找文章正文
         content = ""
-        
-        # 常见文章容器选择器
-        selectors = [
-            'article', '.article-content', '.post-content', '.entry-content',
-            '#article-content', '.content-detail', '.article-detail',
-            '[class*="content"]', '[class*="article"]'
-        ]
+        selectors = ['article', '.article-content', '.post-content', '.entry-content', '.content']
         
         for selector in selectors:
             container = soup.select_one(selector)
             if container:
-                # 获取段落文本
-                paragraphs = container.find_all(['p', 'div'])
+                paragraphs = container.find_all('p')
                 texts = []
                 for p in paragraphs:
                     text = p.get_text(strip=True)
-                    # 过滤短文本和导航类内容
-                    if len(text) > 30 and not any(x in text for x in ['Copyright', '版权', '免责声明', '相关阅读', '推荐阅读']):
+                    if len(text) > 30 and not any(x in text for x in ['相关阅读', '版权所有', '不得转载']):
                         texts.append(text)
-                
                 if texts:
-                    content = ' '.join(texts[:5])  # 取前5段
+                    content = '\n'.join(texts)
                     break
         
-        # 如果没找到，取整个body的文本
         if not content:
-            body = soup.find('body')
-            if body:
-                content = body.get_text(separator=' ', strip=True)
+            all_texts = [p.get_text(strip=True) for p in soup.find_all('p') if len(p.get_text(strip=True)) > 50]
+            content = '\n'.join(all_texts[:15])
         
-        # 清理并截取
-        content = re.sub(r'\s+', ' ', content)
-        content = content[:800]  # 先多取一点，后面再精修
-        
-        return content
+        return re.sub(r'\s+', ' ', content)[:config['output']['raw_content_length']].strip()
         
     except Exception as e:
-        print(f"    抓取正文失败: {e}")
+        logging.error(f"[抓取错误] {source_name}: {e}")
         return ""
 
 
-def extract_summary(content, max_length=250):
-    """
-    从正文提取简洁摘要
-    """
-    if not content:
-        return ""
+def is_ai_related(title, summary="", source=""):
+    """判断是否为AI相关新闻"""
+    title_lower = title.lower()
     
-    # 清理内容
-    content = content.strip()
+    for pattern in FILTER_PATTERNS:
+        if re.search(pattern, title):
+            has_strong_ai = any(kw.lower() in title_lower for kw in AI_KEYWORDS)
+            if not has_strong_ai:
+                return False, 0
     
-    # 如果内容较短，直接返回
-    if len(content) <= max_length:
-        return content
+    core_matches = sum(1 for kw in AI_KEYWORDS if kw.lower() in title_lower)
+    if core_matches == 0:
+        return False, 0
     
-    # 尝试在句子边界截断
-    sentences = re.split(r'([。！？\.\n])', content)
-    summary = ""
-    for i in range(0, len(sentences), 2):
-        sentence = sentences[i]
-        punct = sentences[i+1] if i+1 < len(sentences) else ""
-        candidate = summary + sentence + punct
-        if len(candidate) > max_length:
-            break
-        summary = candidate
+    score = core_matches * 10
+    weight = SOURCE_WEIGHTS.get(source, 1.0)
+    score = int(score * weight)
     
-    # 如果没找到句子边界，直接截断
-    if not summary:
-        summary = content[:max_length-3] + "..."
-    
-    return summary.strip()
+    return True, score
 
 
-def fetch_rss(source_key, source_config):
+def fetch_rss_source(source_key, source_config, deduplicator, db, config):
     """抓取 RSS 源"""
     items = []
+    skipped = 0
+    source_name = source_config['name']
+    
+    days_back = config['date_range']['days_back']
+    cutoff_date = datetime.now() - timedelta(days=days_back)
+    
     try:
-        print(f"正在抓取 {source_config['name']}...")
-        feed = feedparser.parse(source_config['rss'])
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        timeout = config['fetch']['request_timeout']
+        max_retries = config['fetch']['max_retries']
+        delay = config['fetch']['retry_delay']
         
-        for entry in feed.entries:
+        resp = fetch_with_retry(source_config['rss'], headers, timeout, max_retries, delay)
+        resp.encoding = resp.apparent_encoding or 'utf-8'
+        feed = feedparser.parse(resp.content)
+        
+        for entry in feed.entries[:30]:
             title = entry.get('title', '').strip()
-            published = entry.get('published', '')
             url = entry.get('link', '')
             
             if not title or not url:
                 continue
             
-            # 获取RSS摘要（备用）
-            rss_summary = entry.get('summary', entry.get('description', ''))
-            rss_summary = re.sub(r'<[^>]+>', '', rss_summary)
+            # 检查时间
+            published = entry.get('published_parsed') or entry.get('updated_parsed')
+            if published:
+                pub_date = datetime(*published[:6])
+                if pub_date < cutoff_date:
+                    continue
             
-            # 检查AI相关性和计算分数
-            is_ai, score = is_ai_related(title, rss_summary)
+            rss_summary = re.sub(r'<[^>]+>', '', entry.get('summary', ''))
             
+            is_dup, article = deduplicator.is_duplicate(url, title, rss_summary)
+            if is_dup:
+                if article:
+                    items.append(article)
+                    skipped += 1
+                continue
+            
+            is_ai, score = is_ai_related(title, rss_summary, source_name)
             if not is_ai:
                 continue
             
-            print(f"  ✓ AI相关: {title[:40]}...")
+            # 抓取完整内容
+            raw_content = fetch_article_content(url, source_name, config)
             
-            # 抓取正文获取真实摘要
-            print(f"    抓取正文...", end=" ")
-            content = fetch_article_content(url, source_config['name'])
+            # 保存原始内容，摘要留空（由AI后续生成）
+            summary = "" if config['summary']['generate_by'] == 'ai' else raw_content[:250]
             
-            if content:
-                summary = extract_summary(content)
-                print(f"成功 ({len(summary)}字)")
-            else:
-                #  fallback到RSS摘要
-                summary = rss_summary[:300] + '...' if len(rss_summary) > 300 else rss_summary
-                print(f"失败，使用RSS摘要")
+            norm_url = deduplicator.normalize_url(url)
+            article_id = db.save_article(url, norm_url, title, source_name, summary, raw_content, score)
             
             items.append({
-                'title': title,
-                'url': url,
-                'source': source_config['name'],
-                'published': published,
-                'summary': summary,
-                'score': score
+                'id': article_id, 'title': title, 'url': url,
+                'source': source_name, 'summary': summary, 'raw_content': raw_content, 'score': score
             })
             
     except Exception as e:
-        print(f"  ✗ 错误: {e}")
+        logging.error(f"[{source_name}] 抓取错误: {e}")
     
+    logging.info(f"[{source_name}] 获取 {len(items)} 条, 跳过 {skipped} 条已存在")
     return items
 
 
-def fetch_web(source_key, source_config):
-    """网页抓取（用于没有 RSS 的站点）"""
-    items = []
-    try:
-        print(f"正在抓取 {source_config['name']} (网页)...")
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        resp = requests.get(source_config['url'], headers=headers, timeout=10)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        
-        # 新智元网站的文章列表
-        articles = soup.find_all('article', limit=15)
-        if not articles:
-            articles = soup.find_all(['div', 'a'], class_=re.compile('article|post|news|item'), limit=15)
-        
-        for article in articles:
-            try:
-                title_tag = article.find(['h1', 'h2', 'h3', 'h4']) or article.find('a')
-                title = title_tag.get_text(strip=True) if title_tag else ''
-                
-                link_tag = article.find('a', href=True)
-                url = link_tag['href'] if link_tag else ''
-                if url and not url.startswith('http'):
-                    url = source_config['url'] + url
-                
-                if not title or not url:
-                    continue
-                
-                # 检查AI相关性
-                is_ai, score = is_ai_related(title, "")
-                
-                if not is_ai:
-                    continue
-                
-                print(f"  ✓ AI相关: {title[:40]}...")
-                
-                # 抓取正文
-                print(f"    抓取正文...", end=" ")
-                content = fetch_article_content(url, source_config['name'])
-                
-                if content:
-                    summary = extract_summary(content)
-                    print(f"成功 ({len(summary)}字)")
-                else:
-                    summary = ""
-                    print(f"失败")
-                
-                items.append({
-                    'title': title,
-                    'url': url,
-                    'source': source_config['name'],
-                    'published': '',
-                    'summary': summary,
-                    'score': score
-                })
-                
-            except Exception as e:
-                continue
-                
-    except Exception as e:
-        print(f"  ✗ 错误: {e}")
+def generate_openclaw_message(news_items, date_str):
+    """生成 OpenClaw 推送消息 - 每条新闻生成 250-300 字中文摘要，英文自动翻译"""
+    from translator import translate_text
+    import re
     
-    return items
-
-
-def generate_markdown(news_items):
-    """生成 Markdown 格式报告"""
-    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y年%m月%d日')
-    
-    md = f"""# 🤖 AI 每日新闻 - {yesterday}
-
-共 {len(news_items)} 条精选
-
-"""
+    lines = [
+        f"📰 **AI 每日新闻 - {date_str}**",
+        "",
+        f"共 {len(news_items)} 条精选",
+        "──────────────────────────────",
+        ""
+    ]
     
     for i, item in enumerate(news_items, 1):
-        md += f"""---
-
-## {i}. [{item['source']}] {item['title']}
-
-{item['summary']}
-
-🔗 [阅读原文]({item['url']})
-
-"""
+        # 翻译英文标题
+        title = item['title']
+        source = item['source']
+        
+        # 检测标题语言并翻译
+        chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', title[:100]))
+        english_words = len(re.findall(r'[a-zA-Z]+', title[:100]))
+        is_english = chinese_chars * 2 < english_words
+        
+        if is_english:
+            try:
+                title = translate_text(title, 'en', 'zh')
+            except Exception as e:
+                print(f"标题翻译失败：{e}")
+        
+        lines.append(f"**{i}. [{source}] {title}**")
+        lines.append("")
+        
+        # 生成 250-300 字中文摘要，英文自动翻译
+        raw_content = item.get('raw_content', '') or item.get('summary', '')
+        summary = generate_summary(item['title'], raw_content, source)
+        
+        lines.append(summary)
+        lines.append(f"🔗 [阅读原文]({item['url']})")
+        lines.append("")
     
-    md += """---
-
-*AI News Aggregator | 每日更新*
-"""
+    lines.append("──────────────────────────────")
+    lines.append("🤖 AI News Aggregator | 每日更新")
     
-    return md
-
+    return '\n'.join(lines)
 
 def main():
-    print("="*60)
-    print("AI 国内媒体新闻抓取（改进版）")
-    print("="*60)
+    """主程序"""
+    # 加载配置
+    config = load_config()
     
+    # 设置日志
+    logger = setup_logging(config)
+    logger.info("="*60)
+    logger.info("AI 新闻日报 v2.1 启动")
+    logger.info("="*60)
+    
+    # 初始化
+    db = NewsDatabase()
+    deduplicator = NewsDeduplicator(db)
     all_news = []
     
-    for key, config in SOURCES.items():
-        if config.get('type') == 'web':
-            news = fetch_web(key, config)
-        else:
-            news = fetch_rss(key, config)
-        all_news.extend(news)
-        print(f"  从 {config['name']} 获取 {len(news)} 条AI新闻")
-        print()
+    # 并发抓取
+    logger.info(f"启动并发抓取（{config['fetch']['max_workers']} 线程）...")
     
-    # 按分数排序，取前10条
-    all_news.sort(key=lambda x: x['score'], reverse=True)
-    top_news = all_news[:10]
+    with ThreadPoolExecutor(max_workers=config['fetch']['max_workers']) as executor:
+        futures = {
+            executor.submit(fetch_rss_source, k, v, deduplicator, db, config): v['name']
+            for k, v in SOURCES.items()
+        }
+        
+        for future in as_completed(futures):
+            source_name = futures[future]
+            try:
+                items = future.result()
+                all_news.extend(items)
+            except Exception as e:
+                logger.error(f"[{source_name}] 处理失败: {e}")
     
-    print(f"{'='*60}")
-    print(f"共 {len(all_news)} 条AI新闻，筛选出 Top {len(top_news)}")
-    print(f"{'='*60}\n")
+    logger.info(f"总计: {len(all_news)} 条新闻")
     
-    # 生成 Markdown
-    markdown = generate_markdown(top_news)
+    # 去重（全局）
+    seen_titles = set()
+    unique_news = []
+    for item in all_news:
+        if item['title'] not in seen_titles:
+            seen_titles.add(item['title'])
+            unique_news.append(item)
     
-    # 保存文件
-    import os
+    logger.info(f"去重后: {len(unique_news)} 条")
+    
+    # 按分数排序，取前 N
+    unique_news.sort(key=lambda x: x['score'], reverse=True)
+    selected = unique_news[:config['output']['top_n']]
+    
+    logger.info(f"精选: {len(selected)} 条")
+    
+    # 生成日期
+    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y年%m月%d日')
+    
+    # 生成推送消息
+    message = generate_openclaw_message(selected, yesterday)
+    
+    # 保存到文件
     os.makedirs('data', exist_ok=True)
-    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
-    filename = f'data/ai_news_{yesterday}.md'
+    output_file = config['push']['openclaw']['output_file']
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(message)
     
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(markdown)
+    logger.info(f"推送消息已保存: {output_file}")
+    logger.info("="*60)
     
-    print(f"报告已保存: {filename}")
-    
-    # 同时保存为最新版本
-    with open('data/ai_news_latest.md', 'w', encoding='utf-8') as f:
-        f.write(markdown)
-    
-    # 返回 Markdown 内容（用于直接显示）
-    return markdown
+    return message
 
 
 if __name__ == "__main__":
-    markdown_content = main()
-    print("\n" + "="*60)
-    print("MARKDOWN 报告")
-    print("="*60 + "\n")
-    print(markdown_content)
+    result = main()
+    print(result)
