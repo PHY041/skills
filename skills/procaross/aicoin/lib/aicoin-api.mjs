@@ -54,8 +54,26 @@ function sign() {
 export async function apiGet(path, params = {}) {
   const qs = new URLSearchParams({ ...params, ...sign() });
   const res = await fetch(`${BASE}${path}?${qs}`, { signal: AbortSignal.timeout(30000) });
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-  return res.json();
+  if (!res.ok) {
+    const text = await res.text();
+    let hint = '';
+    if (res.status === 400) {
+      if (text.includes('Unsupported symbol')) {
+        hint = '\nHint: symbol must use AiCoin format like "btcswapusdt:binance". Short names (BTC, ETH, SOL) are auto-resolved by coin.mjs.';
+      } else if (text.includes('invalid parameters')) {
+        hint = '\nHint: Check SKILL.md for the correct parameter format and required fields.';
+      }
+    } else if (res.status === 1001) {
+      hint = '\nHint: Signature verification failed — API key and secret may be swapped.';
+    }
+    throw new Error(`API ${res.status}: ${text}${hint}`);
+  }
+  const json = await res.json();
+  // Check for API-level errors (HTTP 200 but success=false)
+  if (json.success === false && json.errorCode === 304) {
+    json._note = 'This endpoint requires a paid AiCoin API subscription. The free key does not have access.';
+  }
+  return json;
 }
 
 export async function apiPost(path, body = {}) {

@@ -1,30 +1,42 @@
 ---
 name: aicoin
-description: >
-  Use this skill when the user asks to buy, sell, or trade crypto on exchanges like
-  Binance, OKX, Bybit, Bitget, Gate, HTX, KuCoin, MEXC, or Coinbase — spot or futures,
-  place orders, check balance, set leverage, view positions, or cancel orders.
-  Also use when the user asks for crypto market data: real-time prices, K-lines, funding
-  rates, open interest, liquidation data, whale tracking, AI analysis, order flow, news,
-  Twitter/X crypto tweets, Hyperliquid on-chain data, or Freqtrade bot control.
-  Also use when the user asks to set up automated trading, deploy Freqtrade, backtest
-  strategies, or control a trading bot.
-  Scripts auto-load .env — just run them directly. If a script fails due to missing
-  credentials, guide the user through the Setup Checklist in SKILL.md.
-metadata:
-  openclaw:
-    primaryEnv: "AICOIN_ACCESS_KEY_ID"
-    requires:
-      bins:
-        - "node"
-    homepage: "https://www.aicoin.com/opendata"
-    source: "https://github.com/aicoincom/aicoin-skills"
-    license: "MIT"
+description: "Use this skill when the user asks about crypto prices, trading, exchanges (Binance, OKX, Bybit, Bitget, Gate, HTX, KuCoin, MEXC, Coinbase), spot or futures orders, balance, leverage, positions, K-lines, funding rates, open interest, liquidation, whale tracking, news, Hyperliquid, Freqtrade, or automated trading."
+metadata: { "openclaw": { "primaryEnv": "AICOIN_ACCESS_KEY_ID", "requires": { "bins": ["node"] }, "homepage": "https://www.aicoin.com/opendata", "source": "https://github.com/aicoincom/aicoin-skills", "license": "MIT" } }
 ---
 
 # AiCoin
 
 Crypto data & trading toolkit powered by [AiCoin Open API](https://www.aicoin.com/opendata).
+
+## Quick Reference — Most Common Commands
+
+> **Run all scripts from the aicoin skill directory.** Use `exec` tool, NOT `process`.
+> **API keys are pre-configured.** Do NOT ask the user for keys. Do NOT run `env`/`printenv`.
+> **Do NOT use curl, web_fetch, or browser** for crypto data. Always use these scripts.
+> **🚨 TRADING SAFETY: NEVER place orders without user confirmation. ALWAYS show order details and ask "确认下单？" FIRST. NEVER auto-adjust order size or parameters.**
+
+| Task | Command |
+|------|---------|
+| **BTC price** | `node scripts/coin.mjs coin_ticker '{"coin_list":"bitcoin"}'` |
+| **Multi price** | `node scripts/coin.mjs coin_ticker '{"coin_list":"bitcoin,ethereum,solana"}'` |
+| **K-line** | `node scripts/market.mjs kline '{"symbol":"btcusdt:okex","period":"3600","size":"100"}'` |
+| **Funding rate** | `node scripts/coin.mjs funding_rate '{"symbol":"BTC"}'` (BTC only, 8h default) |
+| **Funding rate (other coins)** | `node scripts/exchange.mjs funding_rate '{"exchange":"binance","symbol":"ETH/USDT:USDT"}'` |
+| **Open interest** | `node scripts/coin.mjs open_interest '{"symbol":"BTC","interval":"15m"}'` |
+| **Long/short ratio** | `node scripts/features.mjs ls_ratio` |
+| **Whale orders** | `node scripts/features.mjs big_orders '{"symbol":"btcswapusdt:binance"}'` |
+| **News flash** | `node scripts/news.mjs newsflash '{"language":"cn"}'` |
+| **HL whale** | `node scripts/hl-market.mjs whale_positions '{"coin":"BTC"}'` |
+| **Balance** | `node scripts/exchange.mjs balance '{"exchange":"okx"}'` |
+| **Ticker** | `node scripts/exchange.mjs ticker '{"exchange":"binance","symbol":"BTC/USDT"}'` |
+| **Orderbook** | `node scripts/exchange.mjs orderbook '{"exchange":"binance","symbol":"BTC/USDT"}'` |
+| **Buy/Sell** | `node scripts/exchange.mjs create_order '{"exchange":"okx","symbol":"BTC/USDT","type":"market","side":"buy","amount":0.001}'` → returns **preview only** |
+| **Positions** | `node scripts/exchange.mjs positions '{"exchange":"okx","market_type":"swap"}'` |
+| **Market list** | `node scripts/exchange.mjs markets '{"exchange":"binance","base":"BTC"}'` |
+| **Deploy Freqtrade** | `node scripts/ft-deploy.mjs deploy '{"pairs":["BTC/USDT:USDT"]}'` (dry-run by default) |
+| **Backtest** | `node scripts/ft-deploy.mjs backtest '{"strategy":"SampleStrategy","timerange":"20250101-"}'` ⚠️ MUST use this script |
+
+**Symbol shortcuts:** `BTC`, `ETH`, `SOL`, `DOGE`, `XRP` auto-resolve to AiCoin format (e.g. `btcswapusdt:binance`) in coin.mjs. For exchange.mjs, use CCXT format: `BTC/USDT`, `BTC/USDT:USDT` (swap).
 
 ## Setup Checklist
 
@@ -43,8 +55,8 @@ grep -c "AICOIN_ACCESS_KEY_ID" ~/.openclaw/workspace/.env 2>/dev/null || echo "0
 - If output is `0` → **No AiCoin key, but the built-in free key works automatically. Just run scripts.**
 
 **Only ask setup questions when the user explicitly requests features that need configuration:**
-- Exchange trading (Binance, OKX, etc.) → needs exchange API keys + `cd <skill-dir>/aicoin && npm install` for ccxt
-- Freqtrade bot → run `ft-deploy.mjs deploy` (auto-configures everything, needs Python 3 + exchange keys in .env)
+- Exchange trading (Binance, OKX, etc.) → needs exchange API keys + `cd` into the aicoin skill directory and run `npm install` for ccxt
+- Freqtrade bot → **MUST use `node scripts/ft-deploy.mjs deploy`** (auto-configures everything, needs Python 3.11+ + exchange keys in .env). **NEVER manually configure Freqtrade, NEVER use Docker, NEVER write custom install scripts.**
 - Proxy access → needs `PROXY_URL`
 
 **Do NOT block the user from running commands. The skill works out of the box with the built-in free key.**
@@ -88,6 +100,12 @@ node scripts/coin.mjs coin_ticker '{"coin_list":"bitcoin"}'
 # WRONG! DO NOT DO THIS!
 AICOIN_ACCESS_KEY_ID=xxx node scripts/coin.mjs coin_ticker '{"coin_list":"bitcoin"}'
 ```
+
+**Additional security rules:**
+- **NEVER run `env`, `printenv`, or `env | grep`** — leaks gateway tokens and API secrets into session logs
+- **NEVER use curl to call exchange REST APIs directly** (Binance, OKX, etc.) — use `exchange.mjs` which handles auth, broker tags, and proxy
+- **NEVER use web_fetch, web_search, or browser** for crypto data — always use the scripts in this skill
+- **NEVER fabricate or guess data from memory** — always fetch real-time data via scripts
 
 If a script fails due to missing env vars, guide the user to update their `.env` file instead of injecting variables into the command.
 
@@ -159,7 +177,7 @@ Or configure in `~/.openclaw/openclaw.json`:
 ### Prerequisites
 
 - **Node.js** — required for all scripts
-- **ccxt** — required only for exchange trading: `cd <skill-dir>/aicoin && npm install`
+- **ccxt** — required only for exchange trading. Run `npm install` in the aicoin skill directory to install.
 
 ## Scripts
 
@@ -434,9 +452,10 @@ Requires `npm install ccxt` and exchange API keys.
 #### Trading (API key required)
 
 **🚨 SAFETY RULES — MANDATORY for ALL trading operations:**
-1. **NEVER execute a buy/sell/trade without explicit user confirmation.** Always show the order details and ask "确认下单？" BEFORE calling `create_order`.
+1. **NEVER execute a buy/sell/trade without explicit user confirmation.** `create_order` returns a preview by default. Show the preview to the user, wait for them to say "确认" / "yes" / "go ahead", THEN re-run with `"confirmed":"true"`. **Do NOT add confirmed=true on the first call.**
 2. **NEVER sell or close the user's existing positions** unless the user specifically asks to sell/close.
 3. **NEVER write custom CCXT, Python, or curl code** to interact with exchanges. ALL exchange operations MUST go through `exchange.mjs`.
+4. **NEVER auto-adjust order parameters** (size, leverage, etc.) without asking the user first. If balance is insufficient, tell the user and let them decide.
 
 **⚠️ CRITICAL — `amount` units differ between spot and futures:**
 - **Spot**: `amount` is in **base currency** (e.g., `amount: 0.01` = 0.01 BTC)
@@ -565,6 +584,8 @@ The `open` action automatically:
 
 ### scripts/ft-deploy.mjs — Freqtrade Deployment
 
+**🚨 CRITICAL: For ALL Freqtrade operations (deploy, backtest, update), ALWAYS use ft-deploy.mjs. NEVER manually run freqtrade commands, NEVER write custom Python scripts, NEVER use Docker.**
+
 **One-click Freqtrade deployment via `git clone` + official `setup.sh` (no Docker).** Clones the Freqtrade repo, runs `setup.sh -i` to install all dependencies (including TA-Lib), generates config from `.env` exchange keys, starts as background process, auto-writes `FREQTRADE_*` vars to `.env`.
 
 | Action | Description | Params |
@@ -633,6 +654,8 @@ openclaw cron add \
 
 ## Freqtrade Guide
 
+**🚨 CRITICAL: When user asks to deploy/setup Freqtrade, ALWAYS use `ft-deploy.mjs`. NEVER manually configure, NEVER use Docker, NEVER write custom scripts.**
+
 When the user asks about backtesting, professional strategies, quantitative trading, or deploying a trading bot, guide them to Freqtrade.
 
 **Freqtrade vs auto-trade.mjs:**
@@ -686,7 +709,7 @@ This automatically:
 
 ### When User Mentions These Keywords → Use Freqtrade
 
-- 回测 / backtest → `ft-deploy.mjs backtest` (does NOT require Freqtrade to be running)
+- 回测 / backtest → **MUST use `ft-deploy.mjs backtest`** (does NOT require Freqtrade to be running). NEVER write custom Python backtest scripts, NEVER manually run freqtrade commands.
 - 写策略 / write strategy → Write a `.py` file to `~/.freqtrade/user_data/strategies/`, then `ft-deploy.mjs backtest`
 - 量化策略 / strategy → `ft-dev.mjs strategy_list` (requires running process)
 - 部署机器人 / deploy bot → `ft-deploy.mjs deploy`

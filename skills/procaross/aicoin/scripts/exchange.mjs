@@ -49,8 +49,10 @@ async function getExchange(id, marketType, skipAuth = false) {
   if (!skipAuth) {
     const pre = id.toUpperCase();
     opts.apiKey = process.env[`${pre}_API_KEY`];
-    opts.secret = process.env[`${pre}_API_SECRET`];
-    if (process.env[`${pre}_PASSWORD`]) opts.password = process.env[`${pre}_PASSWORD`];
+    opts.secret = process.env[`${pre}_API_SECRET`] || process.env[`${pre}_SECRET`];
+    if (process.env[`${pre}_PASSWORD`] || process.env[`${pre}_PASSPHRASE`]) {
+      opts.password = process.env[`${pre}_PASSWORD`] || process.env[`${pre}_PASSPHRASE`];
+    }
   }
   // Proxy support: PROXY_URL (MCP-compatible) or HTTPS_PROXY/HTTP_PROXY
   const proxyUrl = process.env.PROXY_URL
@@ -118,13 +120,20 @@ cli({
     const ex = await getExchange(exchange, market_type, true);
     return ex.fetchOHLCV(symbol, timeframe, undefined, limit);
   },
-  balance: async ({ exchange, market_type }) => {
+  balance: async ({ exchange, market_type, show_dust }) => {
     const ex = await getExchange(exchange, market_type);
     const bal = await ex.fetchBalance();
     // Return only non-zero balances for cleaner output
     const summary = {};
     for (const [ccy, amt] of Object.entries(bal.total || {})) {
-      if (Number(amt) > 0) summary[ccy] = { free: bal.free[ccy], used: bal.used[ccy], total: bal.total[ccy] };
+      const total = Number(amt);
+      if (total <= 0) continue;
+      // Filter dust tokens (< $0.01 equivalent) unless show_dust is set
+      // Stablecoins check: if < 0.01, it's dust
+      const isStable = ['USDT','USDC','BUSD','DAI','TUSD','FDUSD'].includes(ccy);
+      if (!show_dust && isStable && total < 0.01) continue;
+      if (!show_dust && !isStable && total < 1e-7) continue;
+      summary[ccy] = { free: bal.free[ccy], used: bal.used[ccy], total: bal.total[ccy] };
     }
     // OKX unified account note
     if (exchange === 'okx') {
@@ -140,9 +149,27 @@ cli({
     const ex = await getExchange(exchange, market_type);
     return ex.fetchOpenOrders(symbol);
   },
-  create_order: async ({ exchange, symbol, type, side, amount, price, market_type }) => {
+  create_order: async ({ exchange, symbol, type, side, amount, price, market_type, params, confirmed }) => {
+    // Safety: require explicit confirmation before placing real orders
+    if (confirmed !== 'true' && confirmed !== true) {
+      const ex = await getExchange(exchange, market_type);
+      await ex.loadMarkets();
+      const mkt = ex.markets[symbol];
+      const preview = {
+        _preview: true,
+        _message: '⚠️ Order NOT placed. Show this preview to the user and wait for their explicit confirmation (e.g. "确认" or "yes"). Then re-run with confirmed=true.',
+        exchange, symbol, type, side, amount, price: price || 'market',
+        market_type: market_type || 'spot',
+      };
+      if (mkt?.contractSize) {
+        preview._contractSize = mkt.contractSize;
+        preview._amountInBase = amount * mkt.contractSize;
+        preview._unit = `${amount} contracts × ${mkt.contractSize} ${mkt.base}/contract = ${amount * mkt.contractSize} ${mkt.base}`;
+      }
+      return preview;
+    }
     const ex = await getExchange(exchange, market_type);
-    const order = await ex.createOrder(symbol, type, side, amount, price);
+    const order = await ex.createOrder(symbol, type, side, amount, price, params || {});
     // For futures/swap, attach contract size context so callers know actual position
     if (market_type && market_type !== 'spot') {
       try {
@@ -156,6 +183,10 @@ cli({
       } catch {}
     }
     return order;
+  },
+  funding_rate: async ({ exchange, symbol, market_type }) => {
+    const ex = await getExchange(exchange, market_type || 'swap');
+    return ex.fetchFundingRate(symbol);
   },
   cancel_order: async ({ exchange, symbol, order_id, market_type }) => {
     const ex = await getExchange(exchange, market_type);
@@ -180,6 +211,18 @@ cli({
       };
     }
     const ex = await getExchange(exchange);
-    return ex.transfer(code, amount, from_account, to_account);
+    // Normalize account names for CCXT (lowercase)
+    const from = from_account.toLowerCase();
+    const to = to_account.toLowerCase();
+    try {
+      return await ex.transfer(code, amount, from, to);
+    } catch (err) {
+      const msg = err.message || String(err);
+      // Binance: API key lacks Universal Transfer permission
+      if (exchange === 'binance' && (msg.includes('-1002') || msg.includes('not authorized'))) {
+        throw new Error(`Binance 划转失败: API Key 没有万向划转(Universal Transfer)权限。请在 Binance API 管理后台开启「Permits Universal Transfer / 允许万向划转」权限。原始错误: ${msg}`);
+      }
+      throw err;
+    }
   },
 });
