@@ -1,0 +1,11 @@
+{
+  "owner": "agenttrust",
+  "slug": "agenttrust",
+  "displayName": "A2A via AgentTrust",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1772631073222,
+    "commit": null
+  },
+  "history": []
+}
