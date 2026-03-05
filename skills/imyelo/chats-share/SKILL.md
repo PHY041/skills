@@ -1,85 +1,92 @@
 ---
 name: chats-share
-description: "Use when user wants to share OpenClaw channel conversations externally"
+description: "Share AI agent conversations as public web pages. Use when the user wants to share a conversation externally, export conversation history for documentation, or publish a chat session to a public URL."
 metadata: {"openclaw":{"emoji":"💬","homepage":"https://github.com/imyelo/openclaw-chats-share"}}
 ---
 
 # chats-share
 
-Share OpenClaw conversations as public web pages.
+Share AI agent conversations as public web pages.
 
-## When to Use
+## Supported Agents
 
-- User wants to share a conversation externally
-- User wants to export conversation history for docs
+| Agent | Profile |
+|-------|---------|
+| OpenClaw | [references/platforms/openclaw.md](references/platforms/openclaw.md) |
+| _(unknown)_ | [references/platforms/unknown.md](references/platforms/unknown.md) — generic skill-based fallback |
+| _(new platform)_ | Add a file following [references/platforms/TEMPLATE.md](references/platforms/TEMPLATE.md) |
 
-## Config
+## Core Workflow
 
-**Project dir**: Where `create-openclaw-chats-share` was run
+### 1. Setup Check
 
-- **OpenClaw**: Read from `~/.openclaw/workspace/TOOLS.md`
-- **Other agents**: Pass as argument
+- Detect agent type; load project dir + site URL using the agent profile
+- If project not configured locally, ask the user:
+  - **"Do you have an existing chats-share repo?"**
+  - Yes → [Existing Repo, New Environment](references/setup.md#existing-repo-new-environment)
+  - No (Default) → [First-Time Setup](references/setup.md#first-time-setup)
 
-**site**: Read `site` URL from `{projectDir}/chats-share.toml`
+### 2. Locate Session
 
-**outputDir**: `{projectDir}/chats/` (convention, not config)
+- List sessions using agent profile discovery
+- Show candidates → user confirms selection
 
-## Steps
+### 3. Extract & Convert
 
-1. **Pre-check**: Check if a `chats-share` project dir is configured in TOOLS.md
-   - Read `~/.openclaw/workspace/TOOLS.md`
-   - If no project directory found → Run first-time setup (see "First Time Setup" section below)
-2. Load project dir (from TOOLS.md or arguments)
-3. Load `site` URL from `{projectDir}/chats-share.toml` (use as base for output URL)
-4. Find session:
-   - List all sessions: `ls -t ~/.openclaw/agents/main/sessions/*.jsonl`
-   - Filter by:
-     - `sessionId=xxx` → grep exact ID
-     - `topic=xxx` → grep topic keyword in content
-     - `current` → use most recent (first line after ls -t)
-   - Show candidates to user for confirmation
-5. Parse to temp: `openclaw-chats-share parse {session} -o {projectDir}/chats/.tmp/{timestamp}.md`
-6. Digest summary from parsed file, suggest topic name based on content (e.g. "How to use OpenClaw with Python")
-7. Confirm participants: Read the auto-generated `participants` frontmatter from the temp file.
-   Show the current entries and ask the user if they want to customize the display names
-   (e.g. rename `user` to their real name, or `assistant` to the agent's display name).
-   Update the frontmatter in-place if the user provides new names — keep all other fields (`role`, `model`) unchanged.
-8. Confirm with user: show preview, ask to confirm or modify topic name
-9. Rename: `mv {temp} {projectDir}/chats/{YYYYMMDD}-{topic}.md`
-10. Redact sensitive info (e.g.: API keys, tokens, paths, emails, IPs) (see "Redact" section below)
-11. Confirm with user before commit: `git add {projectDir}/chats/{topic}.md && git commit -m "docs: add {topic}"`
-12. Confirm with user before push: `git push`
+Follow the **Conversion** section in the platform profile detected in Step 1.
+Save the result to `{projectDir}/chats/.tmp/{timestamp}.yaml`.
 
-## First Time Setup
+### 4. Populate Metadata
 
-Run once to initialize project:
-```bash
-create-openclaw-chats-share
-```
-This sets up the project structure.
+The CLI auto-fills structural fields. The Skill's job is to fill in the human-facing metadata:
 
-After setup, register project in TOOLS.md:
-```bash
-# Append to ~/.openclaw/workspace/TOOLS.md
-echo -e "\n## chats-share\n\n- Project: {projectDir}\n" >> ~/.openclaw/workspace/TOOLS.md
-```
+| Field | CLI default | Action |
+|-------|-------------|--------|
+| `date`, `sessionId`, `model`, `totalMessages`, `totalTokens`, `defaultShowProcess` | Auto-filled | Review only |
+| `visibility` | `private` | Update to `public` |
+| `participants` | Generic role names (`user`, `assistant`) | Ask user for display names → rename keys |
+| `title` | `'Session Export'` (generic) | Skim generated YAML → suggest → confirm |
+| `description` | _(absent)_ | Write one-sentence summary → confirm |
+| `channel` | _(absent)_ | Ask user — set to platform name (e.g. `discord`) if applicable; omit otherwise |
+| `cover` | _(absent)_ | Skip (user adds custom OG image URL manually later) |
+| `tags` | _(absent)_ | Skip (user adds manually later) |
 
-## Redact
+### 5. Redact
 
-When sharing publicly, review and redact:
+Review and remove sensitive information:
 - API keys, tokens, passwords
 - File paths with usernames (`/Users/xxx` → `~`)
 - Email addresses, phone numbers
 - Internal URLs and private IPs
 
-## Output
+### 6. Confirm & Save
 
-- File: `{projectDir}/chats/{YYYYMMDD}-{topic}.md`
-- URL: `{site}/share/{slug}`
+- Suggest filename: `{YYYYMMDD}-{topic}.yaml`
+- Show preview → user confirms or modifies topic/filename
+- **Before moving the file, create a dedicated branch** (see below — required even if the user does not publish yet):
+  ```bash
+  cd {projectDir}
+  git checkout -b chat/{YYYYMMDD}-{topic}
+  ```
+- Move: `{projectDir}/chats/.tmp/{timestamp}.yaml` → `{projectDir}/chats/{YYYYMMDD}-{topic}.yaml`
+- Stage and commit immediately so the file is isolated on its own branch:
+  ```bash
+  git add chats/{YYYYMMDD}-{topic}.yaml
+  git commit -m "docs: add {topic}"
+  ```
 
-## Dev
+> **Why create a branch here?** Saving on the default branch risks mixing unrelated changes into a future PR. Always commit each chat file on its own dedicated branch.
 
-Run local dev server:
-```bash
-openclaw-chats-share-web dev
-```
+---
+
+## Optional: Publish
+
+Push the branch created in step 6 and open a PR.
+See [references/publish.md](references/publish.md). Only proceed after explicit user request.
+
+---
+
+## Edge Cases
+
+- **First-time project setup** → [references/setup.md](references/setup.md)
+- **Large or complex sessions (unknown platforms)** → [references/large-file.md](references/large-file.md)
