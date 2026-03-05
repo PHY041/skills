@@ -329,3 +329,76 @@ After retiring content, monitor for 4 weeks:
 - Check that target pages are receiving redirected traffic
 - Monitor rankings of consolidated/target pages
 - Ensure no orphan pages were created by removing internal links
+
+---
+
+## Content Decay Signal Taxonomy
+
+### Decay Indicators
+
+| Signal | Source | Severity | Detection Method |
+|--------|--------|----------|-----------------|
+| Traffic decline >20% MoM | Analytics | High | Monthly traffic comparison |
+| Position drop >5 positions | Rank tracker | High | Weekly rank monitoring |
+| Outdated statistics/dates | Manual review | Medium | Annual content audit |
+| Broken external links | Crawler | Medium | Monthly crawl reports |
+| Decreased CTR | Search Console | Medium | Quarterly CTR analysis |
+| Competitor new content | SERP monitoring | Medium | Monthly SERP checks |
+| User engagement drop | Analytics | Low | Quarterly engagement review |
+| Index coverage issues | Search Console | High | Weekly coverage monitoring |
+
+### Content Decay Stages
+
+| Stage | Symptoms | Urgency | Recommended Action |
+|-------|---------|---------|-------------------|
+| **Early decay** | Slight traffic/position dip | Low | Monitor for 2-4 weeks |
+| **Active decay** | Consistent decline across 2+ months | Medium | Schedule refresh within 2 weeks |
+| **Significant decay** | 50%+ traffic loss, page 2+ | High | Immediate refresh or rewrite |
+| **Terminal decay** | No organic traffic, deindexed | Critical | Rewrite, redirect, or retire |
+
+## Refresh vs. Rewrite Decision Framework
+
+| Factor | Refresh (Update) | Rewrite (New version) |
+|--------|-----------------|---------------------|
+| Content quality | Good foundation, needs updating | Fundamentally flawed or outdated approach |
+| Position | Was ranking well, now dropping | Never ranked well despite optimization |
+| URL age | 1+ years, has earned backlinks | Young URL with no backlink equity |
+| Backlinks | Has external links pointing to it | No backlinks worth preserving |
+| Scope of changes needed | <50% of content changing | >50% needs rewriting |
+| Search intent | Intent hasn't changed | Search intent has evolved |
+
+**Decision rule:** If the URL has backlinks and was ranking, REFRESH. If not, consider REWRITE at a new URL (with 301 redirect if old URL has any equity).
+
+## Content Lifecycle Model
+
+```
+CREATE → PROMOTE → MAINTAIN → REFRESH → [REFRESH again] or RETIRE
+  │         │          │          │                          │
+  │      Month 1    Month 2-6   Month 6-12              When terminal
+  │    Social,      Monitor     Update facts,            301 redirect
+  │    outreach,    rankings,   add new sections,         to related
+  │    email        fix issues  improve depth              content
+```
+
+### Lifecycle Actions by Phase
+
+| Phase | Duration | Key Actions | Metrics to Track |
+|-------|----------|------------|-----------------|
+| Create | Week 1 | Publish, submit to Search Console | Indexation |
+| Promote | Month 1 | Social shares, email, outreach | Referral traffic, backlinks |
+| Maintain | Months 2-6 | Monitor, fix broken links, respond to comments | Rankings, traffic trend |
+| Refresh | Months 6-12+ | Update data, add sections, improve structure | Traffic recovery, new keywords |
+| Retire | When terminal | 301 redirect to best alternative | Redirect traffic recovery |
+
+## Update Strategy by Content Type
+
+| Content Type | Refresh Frequency | Key Updates | Shelf Life |
+|-------------|-------------------|------------|-----------|
+| Statistics roundups | Every 6 months | Replace old stats, add new sources | 6-12 months |
+| Tool comparisons | Every 3-6 months | Update pricing, features, screenshots | 3-6 months |
+| How-to guides | Annually | Update steps, screenshots, links | 12-18 months |
+| Evergreen guides | Every 12-18 months | Add new sections, update examples | 18-24 months |
+| News/trend content | Don't refresh | Archive or redirect | 1-3 months |
+| Case studies | Rarely | Update results if available | 2-3 years |
+| Glossary/definitions | As needed | Update when definitions evolve | 2-5 years |
+
