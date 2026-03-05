@@ -1,0 +1,11 @@
+{
+  "owner": "noah-smith-max",
+  "slug": "android-build",
+  "displayName": "android build tool",
+  "latest": {
+    "version": "0.0.2",
+    "publishedAt": 1772603737087,
+    "commit": null
+  },
+  "history": []
+}
