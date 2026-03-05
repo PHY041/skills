@@ -1,126 +1,59 @@
 ---
 name: masonry
-description: AI-powered image and video generation using the Masonry CLI. Generate images, videos, check job status, and manage media assets.
-metadata:
-  author: masonry-ai
-  version: "1.0"
-compatibility: Requires masonry CLI installed (curl -sSL https://media.masonry.so/cli/install.sh | sh)
-allowed-tools: Bash(masonry:*)
+description: AI-powered image and video generation. Generate images, videos, manage jobs, and explore models via the masonry CLI.
+metadata: {"openclaw":{"emoji":"🧱","requires":{"bins":["masonry"],"env":["MASONRY_TOKEN"]},"install":[{"type":"npm","package":"@masonryai/cli"}],"primaryEnv":"MASONRY_TOKEN","homepage":"https://masonry.so"}}
 ---
 
 # Masonry CLI
 
-The `masonry` CLI provides AI-powered image and video generation capabilities.
+Generate AI-powered images and videos from text prompts.
 
-## When to use this skill
+## When to use
 
-Use this skill when the user wants to:
-- Generate images from text prompts
-- Generate videos from text prompts
-- Check status of generation jobs
-- Download generated media
-- List available AI models
-- View generation history
+- User wants to generate images or videos
+- User asks about available AI models
+- User wants to check generation job status or download results
+- User asks to create visual content, media, or artwork
 
-## Installation
+## Prerequisites
 
-If the masonry command is not available, install it:
+A Masonry subscription is required. Start a free trial at: https://masonry.so/pricing
 
+If the `masonry` command is not found, install it:
 ```bash
-curl -sSL https://media.masonry.so/cli/install.sh | sh
+npm install -g @masonryai/cli
 ```
 
-## Quick Commands
+Or run directly: `npx @masonryai/cli`
 
+## Authentication
+
+If any command returns an auth error:
+
+1. Run: `masonry login --remote`
+2. The command prints an auth URL. Send it to the user.
+3. User opens the URL in a browser, authenticates, and copies the token.
+4. Run: `masonry login --token <TOKEN>`
+
+For environments with `MASONRY_TOKEN` and `MASONRY_WORKSPACE` set, no login is needed.
+
+## Workflow
+
+### 1. Generate content
+
+**Image:**
 ```bash
-# Generate image
-masonry image "your prompt here" --aspect 16:9
-
-# Generate video
-masonry video "your prompt here" --duration 4
-
-# Check job status
-masonry job status <job-id>
-
-# Download result
-masonry job download <job-id> -o ./output.png
-
-# List available models
-masonry models list --type image
-masonry models list --type video
+masonry image "a sunset over mountains, photorealistic" --aspect 16:9
 ```
 
-## Detailed Workflows
-
-### Image Generation
-
+**Video:**
 ```bash
-# Basic generation
-masonry image "a sunset over mountains, photorealistic"
-
-# With options
-masonry image "cyberpunk cityscape" --aspect 16:9 --model imagen-3.0-generate-002
-
-# Available flags
-#   --aspect, -a     Aspect ratio (16:9, 9:16, 1:1)
-#   --dimension, -d  Exact size (1920x1080)
-#   --model, -m      Model key
-#   --output, -o     Output path
-#   --negative-prompt What to avoid
-#   --seed           Reproducibility seed
+masonry video "ocean waves crashing on rocks" --duration 4 --aspect 16:9
 ```
 
-### Video Generation
+### 2. Handle the response
 
-```bash
-# Basic generation
-masonry video "ocean waves crashing on rocks"
-
-# With options
-masonry video "drone shot of forest" --duration 6 --aspect 16:9
-
-# Available flags
-#   --duration       Length in seconds (4, 6, 8)
-#   --aspect, -a     Aspect ratio (16:9, 9:16)
-#   --model, -m      Model key
-#   --image, -i      First frame image
-#   --no-audio       Disable audio generation
-```
-
-### Job Management
-
-```bash
-# List recent jobs
-masonry job list
-
-# Check specific job
-masonry job status <job-id>
-
-# Wait for completion and download
-masonry job wait <job-id> --download -o ./result.png
-
-# View local history
-masonry history list
-masonry history pending --sync
-```
-
-### Model Discovery
-
-```bash
-# List all models
-masonry models list
-
-# Filter by type
-masonry models list --type video
-
-# Get model parameters
-masonry models params veo-3.1-fast-generate-preview
-```
-
-## Response Format
-
-All commands return JSON:
-
+Commands return JSON immediately:
 ```json
 {
   "success": true,
@@ -131,23 +64,74 @@ All commands return JSON:
 }
 ```
 
-## Authentication
-
-If commands fail with auth errors:
+### 3. Wait and download
 
 ```bash
-masonry login
+masonry job wait <job-id>
+masonry job download <job-id> -o /tmp/output.png
 ```
 
-## Enhanced Project Skills
+The download command prints a `MEDIA: /path/to/file` line to stderr.
+After download completes, output that line so the file is sent to the user:
 
-For project-specific skills with detailed workflows, run:
+```
+MEDIA: /tmp/output.png
+```
+
+## Image flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--aspect` | `-a` | Aspect ratio: 16:9, 9:16, 1:1 |
+| `--dimension` | `-d` | Exact size: 1920x1080 |
+| `--model` | `-m` | Model key |
+| `--output` | `-o` | Output file path |
+| `--negative-prompt` | | What to avoid |
+| `--seed` | | Reproducibility seed |
+
+## Video flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--duration` | | Length in seconds: 4, 6, 8 |
+| `--aspect` | `-a` | Aspect ratio: 16:9, 9:16 |
+| `--model` | `-m` | Model key |
+| `--image` | `-i` | First frame image (local file) |
+| `--last-image` | | Last frame image (requires --image) |
+| `--no-audio` | | Disable audio generation |
+| `--seed` | | Reproducibility seed |
+
+## Model discovery
 
 ```bash
-masonry skill install
+masonry models list              # All models
+masonry models list --type image # Image models only
+masonry models list --type video # Video models only
+masonry models info <model-key>  # Parameters and usage example
 ```
 
-This installs additional skills to `.claude/skills/`:
-- `masonry-generate` - Detailed generation workflow
-- `masonry-models` - Model exploration
-- `masonry-jobs` - Job management
+## Job management
+
+```bash
+masonry job list                          # Recent jobs
+masonry job status <job-id>               # Check status
+masonry job download <job-id> -o ./file   # Download result
+masonry job wait <job-id> --download -o . # Wait then download
+masonry history list                      # Local history
+masonry history pending --sync            # Sync pending jobs
+```
+
+## Error codes
+
+| Code | Meaning | Action |
+|------|---------|--------|
+| `AUTH_ERROR` | Not authenticated | Run auth flow above |
+| `VALIDATION_ERROR` | Invalid parameter | Check flag values |
+| `MODEL_NOT_FOUND` | Unknown model key | Run `masonry models list` |
+
+## Guardrails
+
+- Never fabricate job IDs or model keys. Always use values from command output.
+- Never run `masonry login` without `--remote` or `--token` (browser login won't work headless).
+- If a job is pending, wait `check_after_seconds` before checking again.
+- All output is JSON. Parse it, don't guess.
