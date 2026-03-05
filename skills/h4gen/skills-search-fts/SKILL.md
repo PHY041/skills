@@ -1,7 +1,7 @@
 ---
 name: skills-search-fts
 description: Instantly find the best AI agent skills, tools, and capabilities from across the entire web.
-version: 1.0.6
+version: 1.0.7
 metadata:
   openclaw:
     requires:
