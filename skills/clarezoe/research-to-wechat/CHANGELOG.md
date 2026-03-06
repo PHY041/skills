@@ -2,14 +2,35 @@
 
 All notable changes to `research-to-wechat` will be documented in this file.
 
-## 0.4.0 - 2026-03-04
+## 0.4.1 - 2026-03-06
+
+### Added
+
+- **PDF figure extraction**: when source is a PDF paper/report, all figures, charts, tables, and diagrams are extracted as image assets (`imgs/source-fig-*.png`) with captions and page numbers
+- **Source figure priority**: extracted figures from original papers are preferred over AI-generated images in the final article for credibility
+- **WeChat HTML compatibility rules**: mandatory inline CSS, `<section>` instead of `<div>`, no flex/grid, dark theme background wrapping
+- **WeChat compat reference**: new `references/wechat-compat.md` with API endpoints, CDP workflow, and error quick reference
+
+### Updated
+
+- execution-contract.md: Phase 1 adds PDF blocking rule for figure extraction
+- execution-contract.md: Phase 5 image strategy adds source figure priority before AI generation
+- execution-contract.md: Phase 6 adds WeChat HTML Compatibility section
+- capability-map.md: source-ingest now covers PDF figure extraction
+- capability-map.md: wechat-render and wechat-draft reference wechat-compat.md
+- SKILL.md: PDF added to accepted inputs with extraction policy
+- README.md: PDF handling rules added to supported inputs
+
+## 0.4.0 - 2026-03-05
 
 ### Added
 
 - **Writing frameworks**: deep-analysis 四幕式框架 (序言+01/02/03/04, 8000-12000字) with sentence rhythm, data density, cross-cultural references, golden sentences, emotional arc, and chapter hooks
 - **Writing frameworks**: tutorial 六段式框架 (先看结果→概念→操作→实战→拿走即用→升华, 2000-4000字) with result-first rule, visual rhythm specs, and operation step format
-- **Writing checklists**: per-frame self-check lists (deep-analysis: 12 items, tutorial: 11 items)
+- **Writing checklists**: per-frame self-check lists (deep-analysis: 13 items, tutorial: 12 items) including references requirement
 - **Writing prohibitions**: language and content prohibitions merged from both frameworks
+- **References requirement**: every article must end with "## 参考链接" or "## References" section
+- **Source traceability**: every major claim must be traceable to source (URL, publication, author, date)
 - **HTML converter**: md2wechat skill (Go binary, ai mode with Claude-powered HTML generation, no external API)
 - **Article design templates**: `design.pen` with 10 layout styles (极简/编辑/杂志/科技/生活/典雅/粗犷/活泼/商务/艺术), each with Light/Dark variants, plus 6 CTA templates
 - **Design auto-selection**: automatic design matching based on article topic and structure frame (requires Pencil MCP)
