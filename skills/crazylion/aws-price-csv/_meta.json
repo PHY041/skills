@@ -1,0 +1,11 @@
+{
+  "owner": "crazylion",
+  "slug": "aws-price-csv",
+  "displayName": "aws-price-csv",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772693250065,
+    "commit": null
+  },
+  "history": []
+}
