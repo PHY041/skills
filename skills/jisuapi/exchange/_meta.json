@@ -1,0 +1,11 @@
+{
+  "owner": "jisuapi",
+  "slug": "exchange",
+  "displayName": "汇率查询 - Exchange Rate Inquiry & Conversion",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772601269974,
+    "commit": null
+  },
+  "history": []
+}
