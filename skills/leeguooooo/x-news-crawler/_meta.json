@@ -3,9 +3,15 @@
   "slug": "x-news-crawler",
   "displayName": "X News Crawler",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1772679788599,
-    "commit": "https://github.com/openclaw/skills/commit/82b25fd827460cc046ab3fc04d6e591795d399d7"
+    "version": "0.1.1",
+    "publishedAt": 1772696687393,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1772679788599,
+      "commit": "https://github.com/openclaw/skills/commit/82b25fd827460cc046ab3fc04d6e591795d399d7"
+    }
+  ]
 }

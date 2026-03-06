@@ -16,6 +16,14 @@ pnpm add -g agent-browser-stealth
 pnpm approve-builds -g
 ```
 
+Run Chrome with CDP on the regular profile before crawling:
+
+```bash
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9333
+```
+
+Do not use `--user-data-dir` in that Chrome launch command.
+
 ## Workflow
 
 1. Run the CLI, not raw `abs` commands.
@@ -35,6 +43,7 @@ Quick probes:
 ```bash
 ./bin/x-news-crawler --query "openclaw" --mode top --limit 10
 ./bin/x-news-crawler --query "openclaw" --mode latest --since-hours 24 --limit 20
+./bin/x-news-crawler --query "openclaw" --cdp 9333 --limit 20
 ```
 
 ## Output Contract

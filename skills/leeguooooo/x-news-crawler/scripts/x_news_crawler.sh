@@ -11,8 +11,8 @@ Options:
   --since-hours <int>          Keep posts newer than this window (default: 72)
   --limit <int>                Max rows in final JSON (default: 30)
   --scrolls <int>              Scroll rounds before extraction (default: 4)
+  --cdp <port|url>             CDP endpoint for abs (default: 9333)
   --output <file>              Write JSON output to file (default: stdout)
-  --session-prefix <text>      abs session prefix (default: xnews)
   -h, --help                   Show help
 EOF
 }
@@ -29,8 +29,8 @@ QUERY=""
 SINCE_HOURS=72
 LIMIT=30
 SCROLLS=4
+CDP_TARGET="9333"
 OUTFILE=""
-SESSION_PREFIX="xnews"
 FORCE_FAIL_SOURCE="${X_NEWS_FORCE_FAIL_SOURCE:-}"
 declare -a WARNINGS=()
 declare -a FAILED_SOURCES=()
@@ -57,12 +57,12 @@ while [[ $# -gt 0 ]]; do
       SCROLLS="${2:-}"
       shift 2
       ;;
-    --output)
-      OUTFILE="${2:-}"
+    --cdp)
+      CDP_TARGET="${2:-}"
       shift 2
       ;;
-    --session-prefix)
-      SESSION_PREFIX="${2:-}"
+    --output)
+      OUTFILE="${2:-}"
       shift 2
       ;;
     -h|--help)
@@ -80,6 +80,10 @@ done
 if [[ -z "$QUERY" ]]; then
   echo "--query is required" >&2
   usage >&2
+  exit 2
+fi
+if [[ -z "$CDP_TARGET" ]]; then
+  echo "--cdp must not be empty" >&2
   exit 2
 fi
 
@@ -120,6 +124,27 @@ to_json_array() {
   fi
 }
 
+abs_cmd() {
+  abs --cdp "$CDP_TARGET" "$@"
+}
+
+ensure_cdp_ready() {
+  if abs_cmd get url >/dev/null 2>&1; then
+    return 0
+  fi
+
+  cat >&2 <<EOF
+failed to connect abs to CDP endpoint: $CDP_TARGET
+
+Use your regular Chrome profile with CDP enabled, then rerun crawler.
+Do not use --user-data-dir, otherwise Chrome will run in an isolated profile.
+
+Example (macOS):
+  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9333
+EOF
+  exit 1
+}
+
 encoded_query="$(python3 - "$QUERY" <<'PY'
 import sys, urllib.parse
 print(urllib.parse.quote(sys.argv[1]))
@@ -128,6 +153,7 @@ PY
 
 workdir="$(mktemp -d "${TMPDIR:-/tmp}/x-news-crawler.XXXXXX")"
 trap 'rm -rf "$workdir"' EXIT
+ensure_cdp_ready
 
 extract_js_template='
 (() => {
@@ -195,7 +221,6 @@ extract_js_template='
 
 crawl_mode() {
   local source="$1"
-  local session="${SESSION_PREFIX}-${source}-$(date +%s%N)"
   local url="https://x.com/search?q=${encoded_query}&src=typed_query&f=${source}"
   local js out cleaned eval_ok
   local rows_json
@@ -212,16 +237,16 @@ crawl_mode() {
 
   eval_ok=0
   : >"$rows_file"
-  abs --session "$session" tab new >/dev/null || true
-  if ! abs --session "$session" open "$url" >/dev/null; then
+  abs_cmd tab new >/dev/null || true
+  if ! abs_cmd open "$url" >/dev/null; then
     WARNINGS+=("${error_prefix} open failed: ${url}")
-    abs --session "$session" close >/dev/null 2>&1 || true
+    abs_cmd close >/dev/null 2>&1 || true
     return 1
   fi
-  abs --session "$session" wait 4500 >/dev/null || true
+  abs_cmd wait 4500 >/dev/null || true
 
   for ((i=0; i<=SCROLLS; i++)); do
-    if out="$(abs --session "$session" eval "$js" 2>/dev/null)"; then
+    if out="$(abs_cmd eval "$js" 2>/dev/null)"; then
       cleaned="$(printf '%s' "$out" | jq -r . 2>/dev/null || printf '%s' "$out")"
       if printf '%s\n' "$cleaned" | jq -c '.rows[]?' >>"$rows_file"; then
         eval_ok=1
@@ -233,12 +258,12 @@ crawl_mode() {
     fi
 
     if (( i < SCROLLS )); then
-      abs --session "$session" scroll down 2200 >/dev/null || true
-      abs --session "$session" wait 1200 >/dev/null || true
+      abs_cmd scroll down 2200 >/dev/null || true
+      abs_cmd wait 1200 >/dev/null || true
     fi
   done
 
-  abs --session "$session" close >/dev/null 2>&1 || true
+  abs_cmd close >/dev/null 2>&1 || true
 
   if [[ "$eval_ok" -eq 0 ]]; then
     WARNINGS+=("${error_prefix} no successful eval results")
