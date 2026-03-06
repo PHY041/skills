@@ -1,0 +1,11 @@
+{
+  "owner": "anmolnagpal",
+  "slug": "security-group-auditor",
+  "displayName": "Security Group Auditor",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772538233739,
+    "commit": null
+  },
+  "history": []
+}
