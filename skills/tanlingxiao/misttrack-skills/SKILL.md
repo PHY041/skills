@@ -1,20 +1,11 @@
 ---
 name: misttrack-skills
 description: 使用 MistTrack OpenAPI 进行加密货币地址风险分析、AML 合规检测和交易追踪。MistTrack 是由 SlowMist 开发的反洗钱追踪工具，支持 BTC、ETH、TRX、BNB 等主流链上地址与交易的风险评分、标签查询、交易调查等功能。
-source: https://github.com/slowmist/misttrack-skills
-homepage: https://misttrack.io/
-required_env_vars:
-  - name: MISTTRACK_API_KEY
-    description: MistTrack OpenAPI 密钥，用于调用 MistTrack 反洗钱追踪服务
-primary_credential: MISTTRACK_API_KEY
 ---
 
 # MistTrack OpenAPI 技能
 
 ## 概述
-
-**Source**: [github.com/slowmist/misttrack-skills](https://github.com/slowmist/misttrack-skills)
-**Homepage**: [misttrack.io](https://misttrack.io/)
 
 MistTrack 是由 [SlowMist](https://www.slowmist.com/en/) 开发的加密货币反洗钱（AML）追踪工具，专注于打击加密货币洗钱活动。
 

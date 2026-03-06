@@ -10,9 +10,6 @@
 
 MistTrack OpenAPI 的 AI Agent 技能包，用于加密货币地址风险分析、AML 合规检测和链上交易追踪。
 
-**Source**: [github.com/slowmist/misttrack-skills](https://github.com/slowmist/misttrack-skills)
-**Homepage**: [misttrack.io](https://misttrack.io/)
-
 ## 简介
 
 [MistTrack](https://misttrack.io/) 是由 [SlowMist](https://www.slowmist.com/en/) 开发的反洗钱追踪工具（AML），收录超过 4 亿个地址和 50 万条威胁情报。
@@ -78,6 +75,42 @@ npx skills add slowmist/misttrack-skills
 
 Bitcoin、Ethereum、TRON、BNB Smart Chain、Polygon、Arbitrum、Optimism、Base、Avalanche、zkSync Era、Toncoin、Solana、Litecoin、Dogecoin、Bitcoin Cash、Merlin Chain、HashKey Chain、Sui、IoTeX
 
+## 快速开始
+
+1. 在 [MistTrack 控制台](https://dashboard.misttrack.io/upgrade) 使用邮箱验证码登录，然后订阅标准版套餐（新用户可以选择 10 美金的限时体验套餐），付款后即可[创建 API Key](https://dashboard.misttrack.io/apikeys)
+2. 设置环境变量（推荐）：
+   ```bash
+   export MISTTRACK_API_KEY=your_api_key_here
+   ```
+3. 参考 `SKILL.md` 中的完整 API 文档
+4. 参考 `scripts/` 目录中的示例脚本
+
+## 示例脚本
+
+```bash
+export MISTTRACK_API_KEY=your_api_key_here
+
+# 单个地址风险评分
+python scripts/risk_check.py --address 0x... --coin ETH
+
+# 批量异步风险评分
+python scripts/batch_risk_check.py --input addresses.txt --coin ETH
+
+# 完整地址调查
+python scripts/address_investigation.py --address 0x... --coin ETH
+
+# 转账前安全检测（Bitget Wallet / Trust Wallet 集成）
+python scripts/transfer_security_check.py --address 0x... --chain eth
+```
+
+## 速率限制
+
+| 套餐 | 速率 | 每日限额 |
+|------|------|----------|
+| Standard | 1 次/秒 | 10,000 次/天 |
+| Compliance | 5 次/秒 | 50,000 次/天 |
+| Enterprise | 无限制 | 无限制 |
+
 ## 文档
 
 - [完整 API 文档](./SKILL.md)
@@ -91,9 +124,6 @@ Bitcoin、Ethereum、TRON、BNB Smart Chain、Polygon、Arbitrum、Optimism、Ba
 # MistTrack Skills (English)
 
 An AI Agent skill pack for the MistTrack OpenAPI — cryptocurrency address risk analysis, AML compliance checks, and on-chain transaction tracing.
-
-**Source**: [github.com/slowmist/misttrack-skills](https://github.com/slowmist/misttrack-skills)
-**Homepage**: [misttrack.io](https://misttrack.io/)
 
 ## Overview
 
@@ -159,6 +189,42 @@ npx skills add slowmist/misttrack-skills
 ## Supported Blockchains
 
 Bitcoin, Ethereum, TRON, BNB Smart Chain, Polygon, Arbitrum, Optimism, Base, Avalanche, zkSync Era, Toncoin, Solana, Litecoin, Dogecoin, Bitcoin Cash, Merlin Chain, HashKey Chain, Sui, IoTeX
+
+## Quick Start
+
+1. Log in to the [MistTrack Dashboard](https://dashboard.misttrack.io/upgrade) using email verification code, then subscribe to the Standard Plan (new users can choose the limited-time trial plan for $10). After payment, you can [create an API Key](https://dashboard.misttrack.io/apikeys)
+2. Set the environment variable (recommended):
+   ```bash
+   export MISTTRACK_API_KEY=your_api_key_here
+   ```
+3. See `SKILL.md` for full API documentation
+4. See `scripts/` for example scripts
+
+## Example Scripts
+
+```bash
+export MISTTRACK_API_KEY=your_api_key_here
+
+# Single address risk score
+python scripts/risk_check.py --address 0x... --coin ETH
+
+# Batch async risk scoring
+python scripts/batch_risk_check.py --input addresses.txt --coin ETH
+
+# Full address investigation
+python scripts/address_investigation.py --address 0x... --coin ETH
+
+# Pre-transfer security check (Bitget Wallet / Trust Wallet integration)
+python scripts/transfer_security_check.py --address 0x... --chain eth
+```
+
+## Rate Limits
+
+| Plan | Rate | Daily Limit |
+|------|------|-------------|
+| Standard | 1 req/sec | 10,000/day |
+| Compliance | 5 req/sec | 50,000/day |
+| Enterprise | Unlimited | Unlimited |
 
 ## Documentation
 
