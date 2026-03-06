@@ -1,0 +1,11 @@
+{
+  "owner": "googleworkspace-bot",
+  "slug": "gws-gmail",
+  "displayName": "Gws Gmail",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772741634183,
+    "commit": null
+  },
+  "history": []
+}
