@@ -3,9 +3,15 @@
   "slug": "kz-tax-code",
   "displayName": "Kazakhstan tax assistant",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1772701910623,
-    "commit": "https://github.com/openclaw/skills/commit/bbf1fc1d74ce4c0a91fbd36ce88b7e78f8299e9b"
+    "version": "1.1.2",
+    "publishedAt": 1772779836397,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1772701910623,
+      "commit": "https://github.com/openclaw/skills/commit/bbf1fc1d74ce4c0a91fbd36ce88b7e78f8299e9b"
+    }
+  ]
 }
