@@ -1,198 +1,211 @@
 ---
-name: diary-search
-description: "检索日记与会话内容，支持中文分词、BM25搜索、时间衰减排序。可搜索日记、查找历史对话（含归档）、导出会话记录、查询定时任务运行记录。"
-metadata:
-  openclaw:
-    emoji: "📔"
-    requires:
-      bins: []
-      config:
-        - path: "~/.openclaw/openclaw.json"
-          access: "read"
-          purpose: "读取插件配置路径"
-      filesystem:
-        - path: "~/.openclaw/memory"
-          access: "read"
-          purpose: "读取日记文件"
-        - path: "~/.openclaw/agents/*/sessions"
-          access: "read"
-          purpose: "读取会话记录（含归档文件）"
-        - path: "~/.openclaw/cron"
-          access: "read"
-          purpose: "读取定时任务运行记录"
-    install:
-      - id: npm
-        kind: node
-        package: "diary-search"
-        label: "Install via npm"
-      - id: clawhub
-        kind: clawhub
-        slug: diary-search
-        label: "Install via ClawHub"
+name: "performing-searches"
+description: "Provides concurrent web search and code search capabilities for Agents with hybrid retrieval. Supports searching multiple keywords simultaneously, Embedding re-ranking to improve relevance to ~80%. Use when users need to search the web, look up programming documentation, or mention SearXNG, MCP search, or local search."
+version: "1.1.3"
+author: "sebrinass"
+tags: ["search", "mcp", "searxng", "agent", "local"]
+category: "search"
+env:
+  required:
+    - name: "SEARXNG_URL"
+      description: "SearXNG 实例地址"
+      example: "http://localhost:8080"
+  optional:
+    - name: "EMBEDDING_API_KEY"
+      description: "Embedding API 密钥（启用混合检索）"
+    - name: "EMBEDDING_BASE_URL"
+      description: "Embedding API 端点（OpenAI 兼容）"
+    - name: "EMBEDDING_MODEL"
+      description: "嵌入模型名称"
+      default: "nomic-embed-text"
+    - name: "CONTEXT7_API_KEY"
+      description: "Context7 API Key（代码搜索）"
+    - name: "CONTEXT7_API_URL"
+      description: "Context7 API 地址"
+      default: "https://api.context7.com/v1"
+    - name: "MCP_HTTP_PORT"
+      description: "HTTP 模式端口"
+      default: "3000"
+    - name: "AUTH_USERNAME"
+      description: "Basic Auth 用户名"
+    - name: "AUTH_PASSWORD"
+      description: "Basic Auth 密码"
+    - name: "SEARCH_TIMEOUT_MS"
+      description: "搜索超时（毫秒）"
+      default: "30000"
+    - name: "SEARCH_PAGES"
+      description: "搜索页数"
+      default: "1（混合检索时为3）"
+    - name: "SEARCH_ENGINES"
+      description: "指定搜索引擎（逗号分隔）"
+    - name: "SEARCH_LANGUAGE"
+      description: "搜索语言"
+      default: "all"
+    - name: "HTTP_PROXY"
+      description: "HTTP 代理地址"
+    - name: "HTTPS_PROXY"
+      description: "HTTPS 代理地址"
+source: "https://github.com/sebrinass/mcp-augmented-search"
+homepage: "https://github.com/sebrinass/mcp-augmented-search"
 ---
 
-# Diary Search
+# Augmented Search
 
-日记与会话检索插件，搜索 OpenClaw 记录的日记内容和历史对话。
+为 Agent 提供高效的本地联网搜索和代码搜索能力。
 
-**源代码**: [GitHub](https://github.com/sebrinass/diary-search) | **npm**: [diary-search](https://www.npmjs.com/package/diary-search)
+## 快速开始
 
-## 安装步骤
+**前置条件**: SearXNG 实例（必需）
 
-**第一步：安装插件**
-
-```bash
-npm install -g diary-search
-```
-
-**第二步：更新配置**
-
-在 `~/.openclaw/openclaw.json` 的 `plugins.load.paths` 中添加：
-
-```json
-"~/.npm-global/lib/node_modules/diary-search"
-```
-
-完整示例：
-
-```json
-{
-  "plugins": {
-    "enabled": true,
-    "load": {
-      "paths": [
-        "~/.npm-global/lib/node_modules/diary-search"
-      ]
-    }
-  }
-}
-```
-
-**第三步：重启 Gateway**
+**Docker 方式（推荐）**:
 
 ```bash
-openclaw gateway restart
+docker run -d --name searxng -p 8080:8080 searxng/searxng:latest
+docker run -d --name augmented-search -p 3000:3000 \
+  -e SEARXNG_URL=http://host.docker.internal:8080 \
+  ghcr.io/sebrinass/mcp-augmented-search:latest
 ```
 
-## 使用方法
+**npm 方式**:
 
-安装完成后，直接对我说：
-
-### 日记搜索
-```
-搜索我上周关于"项目架构"的日记
-搜索 2026-02 月关于"数据库优化"的讨论
-查找昨天提到的"bug"
-查看我的日记统计
+```bash
+npm install -g augmented-search
+SEARXNG_URL=http://localhost:8080 augmented-search
 ```
 
-### 会话检索
+## 提供的工具
+
+### search — 思考 + 并发搜索
+
+支持混合检索和链接去重，一次请求最多搜索 3 个关键词。
+
+**必填参数：**
+- `thought` — 当前思考内容
+- `thoughtNumber` — 当前思考步骤编号
+- `totalThoughts` — 预计总思考步骤数
+- `nextThoughtNeeded` — 是否需要继续思考
+
+**可选参数：**
+- `searchedKeywords` — 搜索关键词列表（最多 3 个并发）
+- `site` — 限制搜索域名
+
+### read — URL 内容提取
+
+读取网页内容，支持 JS 渲染降级和正文提取。
+
+**参数：**
+- `urls` — URL 数组
+- `startChar` / `maxLength` — 分页读取
+- `section` — 提取指定章节
+- `paragraphRange` — 段落范围
+- `readHeadings` — 仅返回标题列表
+
+### library_search — 搜索编程库
+
+搜索编程库，获取 Context7 兼容的库 ID。
+
+**参数：**
+- `query` — 用户问题（用于相关性排序）
+- `libraryName` — 库名，如 `react`
+
+### library_docs — 查询库文档
+
+查询库的文档和代码示例。
+
+**参数：**
+- `libraryId` — 库 ID，如 `/facebook/react`
+- `query` — 用户问题
+
+## 配置
+
+### 必填
+
+| 变量 | 说明 |
+|------|------|
+| `SEARXNG_URL` | SearXNG 实例地址 |
+
+### 常用可选
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `EMBEDDING_BASE_URL` | - | Embedding API 端点（启用混合检索） |
+| `MCP_HTTP_PORT` | - | HTTP 模式端口 |
+| `SEARCH_TIMEOUT_MS` | 30000 | 搜索超时（毫秒） |
+
+完整配置请参阅 [GitHub 仓库配置文档](https://github.com/sebrinass/mcp-augmented-search/blob/main/docs/configuration.md)。
+
+## 性能建议
+
+| 模式 | 页数 | 超时 | 相关性 |
+|------|------|------|--------|
+| 纯文本 | 1 | 10-15秒 | ~50% |
+| 混合检索 | 3 | 30-60秒 | ~80% |
+
+**其他建议：**
+- 搜索关键词并发不超过 3 个
+- 在 SearXNG 配置中过滤视频网站以提升结果质量
+
+## 工具使用示例
+
+### 使用 mcporter 调用
+
+```bash
+# 列出工具
+mcporter list http://localhost:3000/mcp
+
+# 调用搜索
+mcporter call http://localhost:3000/mcp.search \
+  thought="搜索测试" \
+  thoughtNumber=1 \
+  totalThoughts=1 \
+  nextThoughtNeeded=false \
+  searchedKeywords='["hello world"]'
+
+# 调用 URL 读取
+mcporter call http://localhost:3000/mcp.read \
+  urls='["https://example.com"]'
+
+# 调用代码库搜索
+mcporter call http://localhost:3000/mcp.library_search \
+  query="如何使用 React hooks" \
+  libraryName="react"
+
+# 调用代码文档查询
+mcporter call http://localhost:3000/mcp.library_docs \
+  libraryId="/facebook/react" \
+  query="useEffect cleanup"
 ```
-列出昨天的会话
-列出 2026-03-03 的会话
-搜索我之前说的"webchat"
-导出会话 77762d1f 的对话内容
+
+### 使用 REST API
+
+```bash
+# 健康检查
+curl http://localhost:3000/health
+
+# 搜索
+curl -X POST http://localhost:3000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"thought":"测试","thoughtNumber":1,"totalThoughts":1,"nextThoughtNeeded":false,"searchedKeywords":["hello"]}'
+
+# 读取 URL
+curl -X POST http://localhost:3000/api/read \
+  -H "Content-Type: application/json" \
+  -d '{"urls":["https://example.com"]}'
 ```
 
-### 定时任务查询
-```
-查看最近 7 天的定时任务运行记录
-查看 xiaobu 的定时任务
-```
+## 详细安装
 
-## 工具说明
+完整安装指南请参阅 [GitHub 安装文档](https://github.com/sebrinass/mcp-augmented-search/blob/main/skill/reference/installation.md)，包含：
+- Docker 完整安装
+- npm + 已有 SearXNG
+- SearXNG 配置详解
+- OpenClaw 集成
+- 常见问题
 
-### 日记工具
+## 资源链接
 
-#### diary_search
-
-搜索日记内容。
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| query | string | ✅ | 搜索关键词 |
-| limit | number | ❌ | 返回条数，默认 5 |
-| time_filter | string | ❌ | 时间过滤器 |
-
-**time_filter 可选值：**
-- `today` / `yesterday` / `last_week` / `last_month` / `this_month`
-- `YYYY-MM`（如 2026-02）
-- `YYYY-MM-DD`（如 2026-02-28）
-
-#### diary_stats
-
-获取日记统计信息。
-
-### 会话工具
-
-#### session_list_by_date
-
-按日期列出会话文件。
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| date | string | ✅ | 日期（today/yesterday/YYYY-MM-DD/YYYY-MM） |
-| agent | string | ❌ | Agent 名称，默认 xiaobu |
-
-**注意**：自动过滤定时任务会话，只显示正常对话。
-
-#### session_search
-
-搜索会话消息内容。
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| query | string | ✅ | 搜索关键词 |
-| date | string | ❌ | 日期过滤，默认最近 30 天 |
-| limit | number | ❌ | 返回条数，默认 5 |
-| agent | string | ❌ | Agent 名称，默认 xiaobu |
-
-**特性**：
-- 默认搜索最近 30 天的会话（包括已归档的会话）
-- 如需搜索更早内容，请指定 `date` 参数
-- 自动过滤心跳检查消息
-
-#### session_export
-
-导出会话的纯对话文本。
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| session_id | string | ✅ | 会话ID（可以是前缀） |
-| agent | string | ❌ | Agent 名称，默认 xiaobu |
-| include_thinking | boolean | ❌ | 是否包含 AI 思考过程，默认 false |
-
-**特性**：自动过滤心跳检查消息。
-
-### 定时任务工具
-
-#### cron_list_runs
-
-列出定时任务的运行记录。
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| days | number | ❌ | 查询最近多少天，默认 7 |
-| agent | string | ❌ | 过滤指定 agent 的定时任务 |
-
-**返回内容**：
-- 运行时间
-- 任务名称
-- 状态（ok/error）
-- 耗时
-- Agent 名称
-- 会话 ID（可直接跳转查看详情）
-- 执行摘要
-
-## 更新日志
-
-### v1.1.3
-- 新增 `cron_list_runs` 工具，可查询定时任务运行记录
-- 会话搜索默认支持归档文件（`.deleted.xxx`）
-- 会话搜索默认时间范围改为 30 天
-- 自动过滤定时任务会话和心跳消息
-- 修复会话路径问题，使用 `stateDir` 配置
-
-## 日记格式
-
-支持 `.md`、`.txt`、`.markdown` 文件，文件名建议使用 `YYYY-MM-DD.md` 格式。
+- [安装指南](https://github.com/sebrinass/mcp-augmented-search/blob/main/skill/reference/installation.md) — 完整安装说明
+- [配置参考](https://github.com/sebrinass/mcp-augmented-search/blob/main/docs/configuration.md) — 完整环境变量说明
+- [GitHub 仓库](https://github.com/sebrinass/mcp-augmented-search)
+- [SearXNG 文档](https://docs.searxng.org)
+- [Docker 镜像](https://ghcr.io/sebrinass/mcp-augmented-search)
