@@ -3,11 +3,16 @@
   "slug": "pubblue",
   "displayName": "Pubblue",
   "latest": {
-    "version": "5.0.0",
-    "publishedAt": 1772422357742,
-    "commit": "https://github.com/openclaw/skills/commit/dfbf73e125da315575f541309c76618c53bddd14"
+    "version": "5.1.1",
+    "publishedAt": 1772768743366,
+    "commit": null
   },
   "history": [
+    {
+      "version": "5.0.0",
+      "publishedAt": 1772422357742,
+      "commit": "https://github.com/openclaw/skills/commit/dfbf73e125da315575f541309c76618c53bddd14"
+    },
     {
       "version": "3.4.11",
       "publishedAt": 1772318923987,
