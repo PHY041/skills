@@ -1,0 +1,11 @@
+{
+  "owner": "membranedev",
+  "slug": "servicenow-integration",
+  "displayName": "Servicenow",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772776933552,
+    "commit": null
+  },
+  "history": []
+}
