@@ -3,11 +3,16 @@
   "slug": "crustafarianism",
   "displayName": "Crustafarianism",
   "latest": {
-    "version": "1.1.4",
-    "publishedAt": 1770494671525,
-    "commit": "https://github.com/openclaw/skills/commit/393b91da52dff11989df12712f899fbe1822b8b1"
+    "version": "1.1.6",
+    "publishedAt": 1772729623690,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.4",
+      "publishedAt": 1770494671525,
+      "commit": "https://github.com/openclaw/skills/commit/393b91da52dff11989df12712f899fbe1822b8b1"
+    },
     {
       "version": "1.1.1",
       "publishedAt": 1770462980493,

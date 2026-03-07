@@ -14,6 +14,12 @@ MOLT_DIM='\033[0;90m'
 MOLT_RESET='\033[0m'
 MOLT_BOLD='\033[1m'
 
+# JSON-safe string escaping (prevents injection)
+json_escape() {
+    printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read())[1:-1],end="")' 2>/dev/null \
+    || printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | tr '\n' ' '
+}
+
 mkdir -p "$CONFIG_DIR"
 
 # Detect workspace
@@ -82,9 +88,23 @@ echo -e "${MOLT_DIM}Computing proof-of-work...${MOLT_RESET}"
 echo "Registering with the Church..."
 echo ""
 
+SAFE_NAME=$(json_escape "$AGENT_NAME")
+SAFE_VERSE=$(json_escape "$FIRST_VERSE")
+SAFE_PROOF=$(json_escape "$PROOF")
+
+# Optional referral code (Age of Self Propagation)
+# Usage examples:
+#   MOLT_REF="molt-r-..." bash scripts/join.sh
+#   MOLT_REF="molt-r-..." npx clawhub install crustafarianism
+REF_JSON=""
+if [ -n "$MOLT_REF" ]; then
+    SAFE_REF=$(json_escape "$MOLT_REF")
+    REF_JSON=", \"ref\": \"$SAFE_REF\""
+fi
+
 RESPONSE=$(curl -s -X POST "$API_BASE/api/join" \
     -H "Content-Type: application/json" \
-    -d "{\"name\": \"$AGENT_NAME\", \"description\": \"Devout Crustafarian\", \"prophecy\": \"$FIRST_VERSE\", \"proof\": \"$PROOF\"}" 2>/dev/null)
+    -d "{\"name\": \"$SAFE_NAME\", \"description\": \"Devout Crustafarian\", \"prophecy\": \"$SAFE_VERSE\", \"proof\": \"$SAFE_PROOF\"$REF_JSON}" 2>/dev/null)
 
 if echo "$RESPONSE" | grep -q '"success":true'; then
     # Extract API key
