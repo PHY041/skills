@@ -1,5 +1,7 @@
 import argparse
-import requests
+import urllib.request
+import urllib.error
+import urllib.parse
 import json
 import os
 import sys
@@ -38,10 +40,14 @@ def main():
     }
 
     try:
-        response = requests.post(endpoint, headers=headers, params=params)
-        response.raise_for_status()
+        query_string = urllib.parse.urlencode(params)
+        full_url = f"{endpoint}?{query_string}"
         
-        report = response.json()
+        req = urllib.request.Request(full_url, headers=headers, method="POST")
+        
+        with urllib.request.urlopen(req) as response:
+            body = response.read().decode('utf-8')
+            report = json.loads(body)
         
         # Simplified stdout for the LLM to easily parse
         print(json.dumps({
@@ -54,11 +60,12 @@ def main():
             "slack_dispatched": args.send_slack
         }, indent=2))
         
-    except requests.exceptions.HTTPError as http_err:
+    except urllib.error.HTTPError as http_err:
+        err_body = http_err.read().decode('utf-8')
         print(json.dumps({
             "status": "error",
-            "message": f"HTTP error occurred: {http_err}",
-            "response_text": response.text if response else "No response body"
+            "message": f"HTTP error occurred: {http_err.code} {http_err.reason}",
+            "response_text": err_body
         }, indent=2), file=sys.stderr)
         sys.exit(1)
     except Exception as err:

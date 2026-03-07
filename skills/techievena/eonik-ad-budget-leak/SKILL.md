@@ -1,7 +1,7 @@
 ---
 name: "eonik Ad Budget Leak Agent"
 slug: "eonik-ad-budget-leak"
-version: "1.0.2"
+version: "1.0.3"
 description: "Identifies burning and decaying Meta Ads by running the eonik Budget heuristics engine."
 tags: ["ads", "marketing", "meta", "budgeting", "eonik"]
 author: "eonik"
@@ -53,3 +53,4 @@ The eonik Ad Budget Leak Agent operates under strict data-privacy constraints to
 1. **Secure Eonik Infrastructure:** All API requests are routed strictly to `https://api.eonik.ai` over TLS 1.2+. OpenClaw acts only as the orchestration layer; your sensitive ad performance data is processed entirely within Eonik's secure, enterprise-grade backend infrastructure.
 2. **Zero Local Persistence:** The execution script securely parses your `EONIK_AUTH_TOKEN` from ephemeral environment variables. OpenClaw drops the token immediately after the API call completes, ensuring no credentials are ever cached, logged, or stored locally.
 3. **Managed Slack Integrations:** The `--send_slack` feature leverages pre-configured, secure webhooks managed directly by the Eonik platform. You do not need to expose your local Slack workspace credentials or webhooks to the OpenClaw agent instance.
+4. **Data Exposure:** The compiled audit report returned by the script will contain Meta Ad IDs associated with the flagging campaigns. OpenClaw requires this to formulate the response, but this implies the specific Ad IDs will be exposed inside your chat window and OpenClaw execution logs. Ensure you use a strictly scoped token and are aligned with your organization's chat data-loss prevention policies before pasting.
