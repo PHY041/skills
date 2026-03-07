@@ -62,6 +62,9 @@ metadata:
 > 3. **Region** — 存储桶区域（如 ap-guangzhou）
 > 4. **Bucket** — 存储桶名称（格式 name-appid，如 mybucket-1250000000）
 > 5. **DatasetName**（可选） — 数据万象数据集名称（仅智能搜索需要）
+> 6. **Domain**（可选） — 自定义域名，用于替换默认的 COS 访问域名（如 cdn.example.com）
+> 7. **ServiceDomain**（可选） — 自定义服务域名，用于自定义 COS API 请求域名
+> 8. **Protocol**（可选） — 协议，如 https 或 http
 >
 > 你可以在 [腾讯云控制台 > 访问管理 > API密钥管理](https://console.cloud.tencent.com/cam/capi) 获取密钥，
 > 在 [COS 控制台](https://console.cloud.tencent.com/cos/bucket) 查看存储桶信息。
@@ -75,6 +78,11 @@ metadata:
 如有 DatasetName：
 ```bash
 {baseDir}/scripts/setup.sh --secret-id "<SecretId>" --secret-key "<SecretKey>" --region "<Region>" --bucket "<Bucket>" --dataset "<DatasetName>"
+```
+
+如需自定义域名（可选参数按需添加）：
+```bash
+{baseDir}/scripts/setup.sh --secret-id "<SecretId>" --secret-key "<SecretKey>" --region "<Region>" --bucket "<Bucket>" --domain "<Domain>" --service-domain "<ServiceDomain>" --protocol "<Protocol>"
 ```
 
 脚本会自动：
@@ -231,6 +239,10 @@ describeMediaJob  jobId="<jobId>"
 
 当 cos-mcp 不可用时，通过 `scripts/cos_node.mjs` 执行存储操作。凭证从环境变量读取。
 
+支持的环境变量：
+- `TENCENT_COS_SECRET_ID` / `TENCENT_COS_SECRET_KEY` / `TENCENT_COS_REGION` / `TENCENT_COS_BUCKET`（必需）
+- `TENCENT_COS_DOMAIN` / `TENCENT_COS_SERVICE_DOMAIN` / `TENCENT_COS_PROTOCOL`（可选，自定义域名）
+
 ### 常用命令
 
 > 以下省略 `node {baseDir}/scripts/cos_node.mjs` 前缀。完整格式：`node {baseDir}/scripts/cos_node.mjs <action> [options]`
@@ -271,6 +283,11 @@ delete --key remote/path/file.jpg
 > 官方文档: https://www.tencentcloud.com/zh/document/product/436/10976
 
 当方式一和方式二均不可用时使用。配置持久化在 `~/.cos.conf`。
+
+自定义域名支持（有限）：
+- **ServiceDomain** — 对应 coscmd 的 `-e ENDPOINT` 参数，设置后 Region 失效
+- **Protocol** — 若为 `http`，对应 coscmd 的 `--do-not-use-ssl` 参数
+- **Domain** — COSCMD 不支持 CDN 自定义域名
 
 ### 常用命令
 

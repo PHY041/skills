@@ -157,14 +157,20 @@ do_setup() {
   local REGION=""
   local BUCKET=""
   local DATASET=""
+  local DOMAIN=""
+  local SERVICE_DOMAIN=""
+  local PROTOCOL=""
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --secret-id)  SECRET_ID="$2"; shift 2;;
-      --secret-key) SECRET_KEY="$2"; shift 2;;
-      --region)     REGION="$2"; shift 2;;
-      --bucket)     BUCKET="$2"; shift 2;;
-      --dataset)    DATASET="$2"; shift 2;;
+      --secret-id)       SECRET_ID="$2"; shift 2;;
+      --secret-key)      SECRET_KEY="$2"; shift 2;;
+      --region)          REGION="$2"; shift 2;;
+      --bucket)          BUCKET="$2"; shift 2;;
+      --dataset)         DATASET="$2"; shift 2;;
+      --domain)          DOMAIN="$2"; shift 2;;
+      --service-domain)  SERVICE_DOMAIN="$2"; shift 2;;
+      --protocol)        PROTOCOL="$2"; shift 2;;
       *) shift;;
     esac
   done
@@ -251,6 +257,30 @@ export TENCENT_COS_DATASET_NAME="$DATASET"
 EOF
   fi
 
+  if [ -n "$DOMAIN" ]; then
+    sed -i.bak '/^# --- End Tencent COS Skill ---$/d' "$SHELL_RC"
+    rm -f "${SHELL_RC}.bak"
+    cat >> "$SHELL_RC" << EOF
+export TENCENT_COS_DOMAIN="$DOMAIN"
+EOF
+  fi
+
+  if [ -n "$SERVICE_DOMAIN" ]; then
+    sed -i.bak '/^# --- End Tencent COS Skill ---$/d' "$SHELL_RC"
+    rm -f "${SHELL_RC}.bak"
+    cat >> "$SHELL_RC" << EOF
+export TENCENT_COS_SERVICE_DOMAIN="$SERVICE_DOMAIN"
+EOF
+  fi
+
+  if [ -n "$PROTOCOL" ]; then
+    sed -i.bak '/^# --- End Tencent COS Skill ---$/d' "$SHELL_RC"
+    rm -f "${SHELL_RC}.bak"
+    cat >> "$SHELL_RC" << EOF
+export TENCENT_COS_PROTOCOL="$PROTOCOL"
+EOF
+  fi
+
   echo "# --- End Tencent COS Skill ---" >> "$SHELL_RC"
 
   ok "凭证已写入 $SHELL_RC"
@@ -261,6 +291,9 @@ EOF
   export TENCENT_COS_REGION="$REGION"
   export TENCENT_COS_BUCKET="$BUCKET"
   [ -n "$DATASET" ] && export TENCENT_COS_DATASET_NAME="$DATASET"
+  [ -n "$DOMAIN" ] && export TENCENT_COS_DOMAIN="$DOMAIN"
+  [ -n "$SERVICE_DOMAIN" ] && export TENCENT_COS_SERVICE_DOMAIN="$SERVICE_DOMAIN"
+  [ -n "$PROTOCOL" ] && export TENCENT_COS_PROTOCOL="$PROTOCOL"
 
   # 5. 配置 mcporter
   echo ""
@@ -271,10 +304,20 @@ EOF
   mkdir -p "$MCPORTER_DIR"
 
   # 构建 cos-mcp 的 args 列表
-  local COS_MCP_ARGS="\"cos-mcp\", \"--Region=$REGION\", \"--Bucket=$BUCKET\", \"--SecretId=$SECRET_ID\", \"--SecretKey=$SECRET_KEY\", \"--connectType=stdio\""
+  local COS_MCP_ARGS="\"cos-mcp\", \"--Region=$REGION\", \"--Bucket=$BUCKET\", \"--SecretId=$SECRET_ID\", \"--SecretKey=$SECRET_KEY\""
   if [ -n "$DATASET" ]; then
-    COS_MCP_ARGS="\"cos-mcp\", \"--Region=$REGION\", \"--Bucket=$BUCKET\", \"--SecretId=$SECRET_ID\", \"--SecretKey=$SECRET_KEY\", \"--DatasetName=$DATASET\", \"--connectType=stdio\""
+    COS_MCP_ARGS="$COS_MCP_ARGS, \"--DatasetName=$DATASET\""
   fi
+  if [ -n "$DOMAIN" ]; then
+    COS_MCP_ARGS="$COS_MCP_ARGS, \"--Domain=$DOMAIN\""
+  fi
+  if [ -n "$SERVICE_DOMAIN" ]; then
+    COS_MCP_ARGS="$COS_MCP_ARGS, \"--ServiceDomain=$SERVICE_DOMAIN\""
+  fi
+  if [ -n "$PROTOCOL" ]; then
+    COS_MCP_ARGS="$COS_MCP_ARGS, \"--Protocol=$PROTOCOL\""
+  fi
+  COS_MCP_ARGS="$COS_MCP_ARGS, \"--connectType=stdio\""
 
   if [ -f "$MCPORTER_CONFIG" ]; then
     # 已有配置文件，检查是否已配置 cos-mcp
@@ -316,8 +359,18 @@ MCPEOF
   if command -v pip3 &>/dev/null || command -v pip &>/dev/null; then
     local PIP_CMD
     PIP_CMD=$(command -v pip3 || command -v pip)
-    $PIP_CMD install coscmd -q 2>/dev/null && \
-    coscmd config -a "$SECRET_ID" -s "$SECRET_KEY" -b "$BUCKET" -r "$REGION" 2>/dev/null && \
+    $PIP_CMD install coscmd -q 2>/dev/null
+
+    # 构建 coscmd config 命令
+    local COSCMD_ARGS="-a $SECRET_ID -s $SECRET_KEY -b $BUCKET -r $REGION"
+    if [ -n "$SERVICE_DOMAIN" ]; then
+      COSCMD_ARGS="$COSCMD_ARGS -e $SERVICE_DOMAIN"
+    fi
+    if [ -n "$PROTOCOL" ] && [ "$PROTOCOL" = "http" ]; then
+      COSCMD_ARGS="$COSCMD_ARGS --do-not-use-ssl"
+    fi
+
+    eval coscmd config $COSCMD_ARGS 2>/dev/null && \
     ok "coscmd 已配置" || \
     warn "coscmd 安装/配置失败（非关键）"
   else
@@ -358,7 +411,7 @@ case "$1" in
     echo "  $0 --check-only"
     echo "    仅检查环境状态"
     echo ""
-    echo "  $0 --secret-id <ID> --secret-key <KEY> --region <REGION> --bucket <BUCKET> [--dataset <NAME>]"
+    echo "  $0 --secret-id <ID> --secret-key <KEY> --region <REGION> --bucket <BUCKET> [--dataset <NAME>] [--domain <DOMAIN>] [--service-domain <DOMAIN>] [--protocol <PROTOCOL>]"
     echo "    自动设置环境（安装依赖 + 配置凭证 + 验证连接）"
     ;;
 esac

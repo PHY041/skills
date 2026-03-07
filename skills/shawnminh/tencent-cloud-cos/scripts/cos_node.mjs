@@ -24,6 +24,11 @@ const SecretKey = process.env.TENCENT_COS_SECRET_KEY;
 const Region = process.env.TENCENT_COS_REGION;
 const Bucket = process.env.TENCENT_COS_BUCKET;
 
+// 可选的自定义域名配置
+const Domain = process.env.TENCENT_COS_DOMAIN;
+const ServiceDomain = process.env.TENCENT_COS_SERVICE_DOMAIN;
+const Protocol = process.env.TENCENT_COS_PROTOCOL;
+
 if (!SecretId || !SecretKey || !Region || !Bucket) {
   console.error(JSON.stringify({
     success: false,
@@ -32,7 +37,21 @@ if (!SecretId || !SecretKey || !Region || !Bucket) {
   process.exit(1);
 }
 
-const cos = new COS({ SecretId, SecretKey });
+const cosOptions = { SecretId, SecretKey };
+
+if (Domain) {
+  cosOptions.Domain = Domain;
+}
+
+if (ServiceDomain) {
+  cosOptions.ServiceDomain = ServiceDomain;
+}
+
+if (Protocol) {
+  cosOptions.Protocol = Protocol;
+}
+
+const cos = new COS(cosOptions);
 
 // 解析命令行参数
 function parseArgs(args) {
