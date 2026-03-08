@@ -3,11 +3,16 @@
   "slug": "ravi-identity",
   "displayName": "Ravi identity",
   "latest": {
-    "version": "1.7.0",
-    "publishedAt": 1772783515389,
-    "commit": "https://github.com/openclaw/skills/commit/1a9319a9c6dab042d4606c1436f135057b835b93"
+    "version": "1.7.1",
+    "publishedAt": 1772960984854,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.7.0",
+      "publishedAt": 1772783515389,
+      "commit": "https://github.com/openclaw/skills/commit/1a9319a9c6dab042d4606c1436f135057b835b93"
+    },
     {
       "version": "1.6.0",
       "publishedAt": 1772282659544,
