@@ -3,9 +3,15 @@
   "slug": "one-click-posting",
   "displayName": "One Click Posting",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1772861723435,
-    "commit": "https://github.com/openclaw/skills/commit/baa937470da2852b2e9e16b1700417283e2eb8b7"
+    "version": "1.2.0",
+    "publishedAt": 1772867394266,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1772861723435,
+      "commit": "https://github.com/openclaw/skills/commit/baa937470da2852b2e9e16b1700417283e2eb8b7"
+    }
+  ]
 }

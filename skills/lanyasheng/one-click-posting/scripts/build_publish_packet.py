@@ -7,6 +7,7 @@ from pathlib import Path
 
 ALLOWED_PLATFORMS = ("xiaohongshu", "x", "zhihu")
 PLATFORM_PRIORITY = ("xiaohongshu", "x", "zhihu")
+ALLOWED_COVER_MODES = ("auto", "upload", "xhs_text")
 
 XHS_MIN_WIDTH = 720
 XHS_MIN_HEIGHT = 960
@@ -22,6 +23,12 @@ def parse_args() -> argparse.Namespace:
     group.add_argument("--body-file", help="Path to body text file")
     parser.add_argument("--platform", action="append", required=True, help="Target platform, repeatable")
     parser.add_argument("--cover", help="Cover image path")
+    parser.add_argument(
+        "--cover-mode",
+        default="auto",
+        choices=ALLOWED_COVER_MODES,
+        help="Cover mode for Xiaohongshu: auto(default)/upload/xhs_text",
+    )
     parser.add_argument("--tags", default="", help="Comma-separated tags")
     parser.add_argument("--source", default="", help="Comma-separated source labels")
     parser.add_argument("--audience", default="", help="Target audience")
@@ -92,6 +99,21 @@ def normalize_platforms(platform_args):
         raise ValueError("At least one valid platform is required")
 
     return platforms
+
+
+def resolve_cover_mode(platforms: list, cover_path: str, requested_mode: str) -> str:
+    is_xhs = "xiaohongshu" in platforms
+
+    if not is_xhs:
+        return "upload"
+
+    if requested_mode == "auto":
+        return "xhs_text" if not cover_path else "upload"
+
+    if requested_mode == "xhs_text":
+        return "xhs_text"
+
+    return "upload"
 
 
 def get_png_size(path: Path):
@@ -248,8 +270,20 @@ def build_cover_meta(cover_path: str):
     }
 
 
-def build_quality_checks(title: str, body: str, audience: str, core_viewpoint: str, sources: list, platforms: list, cover_meta: dict, verify_status: str):
+def build_quality_checks(
+    title: str,
+    body: str,
+    audience: str,
+    core_viewpoint: str,
+    sources: list,
+    platforms: list,
+    cover_mode: str,
+    cover_meta: dict,
+    verify_status: str,
+):
     is_xhs = "xiaohongshu" in platforms
+    need_upload_cover = is_xhs and cover_mode == "upload"
+
     has_cover = bool(cover_meta.get("path"))
     cover_readable = bool(cover_meta.get("readable"))
     width = cover_meta.get("width") or 0
@@ -271,10 +305,11 @@ def build_quality_checks(title: str, body: str, audience: str, core_viewpoint: s
         "has_core_viewpoint": bool(core_viewpoint),
         "source_traceable": bool(sources),
         "verify_status_declared": verify_status in ("已核验", "待核实"),
-        "has_cover_for_xiaohongshu": (not is_xhs) or has_cover,
-        "cover_readable_for_xiaohongshu": (not is_xhs) or (not has_cover) or cover_readable,
-        "cover_ratio_3_4_for_xiaohongshu": (not is_xhs) or (not has_cover) or ((not cover_readable) or cover_ratio_ok),
-        "cover_size_min_for_xiaohongshu": (not is_xhs) or (not has_cover) or ((not cover_readable) or cover_size_ok),
+        "cover_mode_valid_for_xiaohongshu": (not is_xhs) or (cover_mode in ("upload", "xhs_text")),
+        "has_cover_for_xiaohongshu": (not is_xhs) or (cover_mode == "xhs_text") or has_cover,
+        "cover_readable_for_xiaohongshu": (not need_upload_cover) or (not has_cover) or cover_readable,
+        "cover_ratio_3_4_for_xiaohongshu": (not need_upload_cover) or (not has_cover) or ((not cover_readable) or cover_ratio_ok),
+        "cover_size_min_for_xiaohongshu": (not need_upload_cover) or (not has_cover) or ((not cover_readable) or cover_size_ok),
     }
 
     warnings = []
@@ -286,13 +321,17 @@ def build_quality_checks(title: str, body: str, audience: str, core_viewpoint: s
         warnings.append("缺少来源字段，需补充可追溯来源")
     if verify_status == "待核实":
         warnings.append("含待核实信息，发布前务必人工复核")
-    if is_xhs and not has_cover:
-        warnings.append("小红书目标发布建议提供封面图")
-    if is_xhs and has_cover and not cover_readable:
+
+    if is_xhs and cover_mode == "xhs_text":
+        warnings.append("小红书采用文字配图模式：发布前需截图封面预览并经老板确认")
+
+    if need_upload_cover and not has_cover:
+        warnings.append("小红书上传封面模式下需要提供封面图")
+    if need_upload_cover and has_cover and not cover_readable:
         warnings.append("封面尺寸读取失败，仅支持 png/jpg/jpeg/webp")
-    if is_xhs and has_cover and cover_readable and not cover_ratio_ok:
+    if need_upload_cover and has_cover and cover_readable and not cover_ratio_ok:
         warnings.append("小红书封面建议接近 3:4 比例")
-    if is_xhs and has_cover and cover_readable and not cover_size_ok:
+    if need_upload_cover and has_cover and cover_readable and not cover_size_ok:
         warnings.append(f"小红书封面建议不小于 {XHS_MIN_WIDTH}x{XHS_MIN_HEIGHT}")
 
     return checks, warnings
@@ -316,6 +355,8 @@ def build_packet(args: argparse.Namespace) -> dict:
     first_comment = args.first_comment.strip()
 
     platforms = normalize_platforms(args.platform)
+    cover_mode = resolve_cover_mode(platforms=platforms, cover_path=cover, requested_mode=args.cover_mode)
+
     tags = normalize_list(args.tags)
     sources = normalize_list(args.source)
 
@@ -328,12 +369,13 @@ def build_packet(args: argparse.Namespace) -> dict:
         core_viewpoint=core_viewpoint,
         sources=sources,
         platforms=platforms,
+        cover_mode=cover_mode,
         cover_meta=cover_meta,
         verify_status=args.verify_status,
     )
 
     return {
-        "schema_version": "1.2.0",
+        "schema_version": "1.3.0",
         "packet_id": packet_id,
         "created_at": now.isoformat(timespec="seconds"),
         "content": {
@@ -341,6 +383,7 @@ def build_packet(args: argparse.Namespace) -> dict:
             "body": body,
             "tags": tags,
             "cover": cover,
+            "cover_mode": cover_mode,
             "cover_meta": cover_meta,
             "first_comment": first_comment,
             "audience": audience,
