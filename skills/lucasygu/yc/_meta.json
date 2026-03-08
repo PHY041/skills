@@ -3,9 +3,15 @@
   "slug": "yc",
   "displayName": "yc",
   "latest": {
-    "version": "0.3.1",
-    "publishedAt": 1772603093427,
-    "commit": "https://github.com/openclaw/skills/commit/daa92480ee87d844f13a0da581e1bfd65215834f"
+    "version": "0.3.2",
+    "publishedAt": 1772943124719,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.3.1",
+      "publishedAt": 1772603093427,
+      "commit": "https://github.com/openclaw/skills/commit/daa92480ee87d844f13a0da581e1bfd65215834f"
+    }
+  ]
 }
