@@ -5,85 +5,193 @@ import glob
 import pathlib
 import re
 import shutil
+import subprocess
 import sys
 
 MARKER_START = "/* OPENCLAW_TELEGRAM_STATUS_FOOTER_START */"
 MARKER_END = "/* OPENCLAW_TELEGRAM_STATUS_FOOTER_END */"
 
-SNIPPET = f"""
+SNIPPET = f'''
 {MARKER_START}
+const __ocSessionLooksTelegramDirect =
+  typeof sessionKey === "string" && sessionKey.includes(":telegram:direct:");
 const __ocShouldAppendStatusFooter =
-  activeSessionEntry?.chatType !== \"group\" &&
-  activeSessionEntry?.chatType !== \"channel\" &&
-  (activeSessionEntry?.lastChannel === \"telegram\" || activeSessionEntry?.channel === \"telegram\");
+  (__ocSessionLooksTelegramDirect || activeSessionEntry?.lastChannel === "telegram" || activeSessionEntry?.channel === "telegram") &&
+  activeSessionEntry?.chatType !== "group" &&
+  activeSessionEntry?.chatType !== "channel";
 
 if (__ocShouldAppendStatusFooter) {{
   const __ocTotalTokens = resolveFreshSessionTotalTokens(activeSessionEntry);
+  const __ocThinkingLevel = activeSessionEntry?.thinkingLevel || "default";
 
   const __ocStatusFooter = [
-    `🧠 Model: ${{providerUsed && modelUsed ? `${{providerUsed}}/${{modelUsed}}` : modelUsed || \"unknown\"}}`,
-    `📊 Context: ${{formatTokens(
-      typeof __ocTotalTokens === \"number\" && Number.isFinite(__ocTotalTokens) && __ocTotalTokens > 0
+    `🧠 ${{providerUsed && modelUsed ? `${{providerUsed}}/${{modelUsed}}` : modelUsed || "unknown"}}`,
+    `💭 Think: ${{__ocThinkingLevel}}`,
+    `📊 ${{formatTokens(
+      typeof __ocTotalTokens === "number" && Number.isFinite(__ocTotalTokens) && __ocTotalTokens > 0
         ? __ocTotalTokens
         : null,
       contextTokensUsed ?? activeSessionEntry?.contextTokens ?? null
     )}}`
-  ].join(\" \" );
+  ].join(" " );
 
-  finalPayloads = appendUsageLine(finalPayloads, __ocStatusFooter);
+  finalPayloads = appendUsageLine(finalPayloads, `\n──────────\n${{__ocStatusFooter}}`);
 }}
 {MARKER_END}
-""".strip("\n")
+'''.strip("\n")
 
 PATTERN = re.compile(
     r"(if\s*\(\s*responseUsageLine\s*\)\s*finalPayloads\s*=\s*appendUsageLine\(\s*finalPayloads\s*,\s*responseUsageLine\s*\);)",
     flags=re.M,
 )
+MARKER_BLOCK_RE = re.compile(
+    re.escape(MARKER_START) + r".*?" + re.escape(MARKER_END),
+    flags=re.S,
+)
+TARGET_GLOBS = ["reply-*.js", "compact-*.js", "pi-embedded-*.js"]
+LEGACY_BLOCK_RE = re.compile(
+    r"\n?\s*const shouldAppendStatusFooter = activeSessionEntry\?\.chatType !== \"group\" && activeSessionEntry\?\.chatType !== \"channel\" && \(activeSessionEntry\?\.lastChannel === \"telegram\" \|\| activeSessionEntry\?\.channel === \"telegram\"\);\s*"
+    r"if \(shouldAppendStatusFooter\) \{\s*"
+    r"const totalTokens = resolveFreshSessionTotalTokens\(activeSessionEntry\);\s*"
+    r"const statusFooter = \[\s*"
+    r"`🧠 Model: \$\{providerUsed && modelUsed \? `\$\{providerUsed\}/\$\{modelUsed\}` : modelUsed \|\| \"unknown\"\}`\s*,\s*"
+    r"`📊 Context: \$\{formatTokens\(typeof totalTokens === \"number\" && Number\.isFinite\(totalTokens\) && totalTokens > 0 \? totalTokens : null, contextTokensUsed \?\? activeSessionEntry\?\.contextTokens \?\? null\)\}`\s*"
+    r"\]\.join\(\"  \"\);\s*"
+    r"finalPayloads = appendUsageLine\(finalPayloads, statusFooter\);\s*"
+    r"\}\s*",
+    flags=re.S,
+)
 
 
-def patch_file(path: pathlib.Path, dry_run: bool) -> bool:
+def verify_node_syntax(path: pathlib.Path):
+    result = subprocess.run(
+        ["node", "--check", str(path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        details = (result.stderr or result.stdout or "node --check failed").strip()
+        raise RuntimeError(details)
+
+
+def iter_target_files(dist: pathlib.Path) -> list[pathlib.Path]:
+    files: list[pathlib.Path] = []
+    for pattern in TARGET_GLOBS:
+        files.extend(sorted(dist.glob(pattern)))
+    seen: set[str] = set()
+    unique: list[pathlib.Path] = []
+    for fp in files:
+        key = str(fp)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(fp)
+    return unique
+
+
+def patch_file(path: pathlib.Path, dry_run: bool):
     content = path.read_text(encoding="utf-8")
+    has_marker = MARKER_START in content
+    has_pattern = PATTERN.search(content) is not None
+    has_legacy = LEGACY_BLOCK_RE.search(content) is not None
+    backups = sorted(glob.glob(str(path) + ".bak.telegram-footer.*"))
 
-    if MARKER_START in content:
-        print(f"[skip] already patched: {path}")
-        return False
+    is_candidate = has_marker or has_pattern or has_legacy
+    if not is_candidate:
+        print(f"[skip] non-target dist bundle: {path}")
+        return {"status": "skip", "candidate": False, "changed": False}
 
-    m = PATTERN.search(content)
-    if not m:
-        print(f"[skip] needle not found: {path}")
-        return False
+    if (not has_marker) and backups:
+        print(
+            f"[info] marker missing but backups exist ({len(backups)}): likely overwritten by upgrade, reapplying: {path}"
+        )
 
-    replacement = m.group(1) + "\n\n" + SNIPPET
-    new_content = content[: m.start()] + replacement + content[m.end() :]
+    updated = content
+    legacy_removed = 0
+    if has_legacy:
+        updated, legacy_removed = LEGACY_BLOCK_RE.subn("\n", updated)
+
+    if MARKER_START in updated:
+        updated, count = MARKER_BLOCK_RE.subn(SNIPPET, updated, count=1)
+        if count == 0:
+            print(f"[err] marker block found but could not be replaced: {path}", file=sys.stderr)
+            return {"status": "error", "candidate": True, "changed": False}
+        action = "update patch"
+    else:
+        match = PATTERN.search(updated)
+        if not match:
+            print(
+                f"[err] insertion needle not found in candidate dist bundle: {path} (upstream dist likely changed; rework patch)",
+                file=sys.stderr,
+            )
+            return {"status": "error", "candidate": True, "changed": False}
+        replacement = match.group(1) + "\n\n" + SNIPPET
+        updated = updated[: match.start()] + replacement + updated[match.end() :]
+        action = "patch"
+
+    changed = updated != content
+    if not changed:
+        print(f"[skip] already up to date: {path}")
+        return {"status": "ok", "candidate": True, "changed": False}
 
     if dry_run:
-        print(f"[dry-run] would patch: {path}")
-        return True
+        extra = f" (legacy cleaned: {legacy_removed})" if legacy_removed else ""
+        print(f"[dry-run] would {action}: {path}{extra}")
+        return {"status": "ok", "candidate": True, "changed": True}
 
     ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     backup = path.with_suffix(path.suffix + f".bak.telegram-footer.{ts}")
     shutil.copy2(path, backup)
-    path.write_text(new_content, encoding="utf-8")
-    print(f"[ok] patched: {path}")
-    print(f"[ok] backup : {backup}")
-    return True
+    try:
+        path.write_text(updated, encoding="utf-8")
+        verify_node_syntax(path)
+    except Exception as exc:
+        shutil.copy2(backup, path)
+        print(f"[err] patch failed, restored backup: {path}", file=sys.stderr)
+        print(f"[err] reason: {exc}", file=sys.stderr)
+        return {"status": "error", "candidate": True, "changed": False}
+
+    extra = f" (legacy cleaned: {legacy_removed})" if legacy_removed else ""
+    print(f"[ok] {action}ed: {path}{extra}")
+    print(f"[ok] backup      : {backup}")
+    print(f"[ok] syntax check: node --check passed")
+    return {"status": "ok", "candidate": True, "changed": True}
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Patch OpenClaw reply dist files to append Telegram status footer.")
+    parser = argparse.ArgumentParser(description="Patch OpenClaw dist files to append Telegram status footer.")
     parser.add_argument("--dist", default="/usr/lib/node_modules/openclaw/dist", help="OpenClaw dist directory")
     parser.add_argument("--dry-run", action="store_true", help="Preview only, do not write")
     args = parser.parse_args()
 
-    files = sorted(glob.glob(str(pathlib.Path(args.dist) / "reply-*.js")))
+    files = iter_target_files(pathlib.Path(args.dist))
     if not files:
-        print("[err] no reply-*.js found", file=sys.stderr)
+        print("[err] no target dist files found", file=sys.stderr)
         return 2
 
     changed = 0
+    candidate_count = 0
+    errors = 0
     for fp in files:
-        if patch_file(pathlib.Path(fp), dry_run=args.dry_run):
+        result = patch_file(fp, dry_run=args.dry_run)
+        if result["candidate"]:
+            candidate_count += 1
+        if result["changed"]:
             changed += 1
+        if result["status"] == "error":
+            errors += 1
+
+    if candidate_count == 0:
+        print(
+            "[err] no patchable dist bundle found; marker and insertion needle were absent in all target files. OpenClaw dist likely changed.",
+            file=sys.stderr,
+        )
+        return 3
+
+    if errors > 0:
+        print(f"[done] encountered errors: {errors}", file=sys.stderr)
+        return 1
 
     if changed == 0:
         print("[done] no files changed")

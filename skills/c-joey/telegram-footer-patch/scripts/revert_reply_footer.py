@@ -3,9 +3,38 @@ import argparse
 import glob
 import pathlib
 import shutil
+import subprocess
 import sys
 
 MARKER_START = "/* OPENCLAW_TELEGRAM_STATUS_FOOTER_START */"
+TARGET_GLOBS = ["reply-*.js", "compact-*.js", "pi-embedded-*.js"]
+
+
+def verify_node_syntax(path: pathlib.Path):
+    result = subprocess.run(
+        ["node", "--check", str(path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        details = (result.stderr or result.stdout or "node --check failed").strip()
+        raise RuntimeError(details)
+
+
+def iter_target_files(dist: pathlib.Path) -> list[pathlib.Path]:
+    files: list[pathlib.Path] = []
+    for pattern in TARGET_GLOBS:
+        files.extend(sorted(dist.glob(pattern)))
+    seen: set[str] = set()
+    unique: list[pathlib.Path] = []
+    for fp in files:
+        key = str(fp)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(fp)
+    return unique
 
 
 def revert_file(path: pathlib.Path, dry_run: bool) -> bool:
@@ -16,7 +45,7 @@ def revert_file(path: pathlib.Path, dry_run: bool) -> bool:
 
     backups = sorted(glob.glob(str(path) + ".bak.telegram-footer.*"))
     if not backups:
-        print(f"[err] backup not found: {path}")
+        print(f"[err] backup not found: {path}", file=sys.stderr)
         return False
 
     latest = pathlib.Path(backups[-1])
@@ -24,20 +53,32 @@ def revert_file(path: pathlib.Path, dry_run: bool) -> bool:
         print(f"[dry-run] would restore {path} <- {latest}")
         return True
 
-    shutil.copy2(latest, path)
-    print(f"[ok] restored: {path} <- {latest}")
+    current_backup = path.with_suffix(path.suffix + ".bak.pre-revert")
+    shutil.copy2(path, current_backup)
+    try:
+        shutil.copy2(latest, path)
+        verify_node_syntax(path)
+    except Exception as exc:
+        shutil.copy2(current_backup, path)
+        print(f"[err] restore failed, put current file back: {path}", file=sys.stderr)
+        print(f"[err] reason: {exc}", file=sys.stderr)
+        return False
+
+    print(f"[ok] restored    : {path} <- {latest}")
+    print(f"[ok] safety copy : {current_backup}")
+    print(f"[ok] syntax check: node --check passed")
     return True
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Restore OpenClaw reply dist files from latest telegram-footer backups.")
+    parser = argparse.ArgumentParser(description="Restore OpenClaw dist files from latest telegram-footer backups.")
     parser.add_argument("--dist", default="/usr/lib/node_modules/openclaw/dist", help="OpenClaw dist directory")
     parser.add_argument("--dry-run", action="store_true", help="Preview only, do not write")
     args = parser.parse_args()
 
-    files = sorted(pathlib.Path(args.dist).glob("reply-*.js"))
+    files = iter_target_files(pathlib.Path(args.dist))
     if not files:
-        print("[err] no reply-*.js found", file=sys.stderr)
+        print("[err] no target dist files found", file=sys.stderr)
         return 2
 
     changed = 0
