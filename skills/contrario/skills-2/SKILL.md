@@ -1,3 +1,21 @@
+---
+name: aetherlang
+description: Execute AI workflow orchestration flows using the AetherLang Ω DSL. Run multi-step AI pipelines for recipes, business strategy, market analysis, molecular gastronomy, and more.
+version: 2.0.2
+author: contrario
+homepage: https://masterswarm.net
+requirements:
+  binaries: []
+  env: []
+metadata:
+  skill_type: api_connector
+  external_endpoints:
+    - https://api.neurodoc.app/aetherlang/execute
+  operator_note: "api.neurodoc.app operated by NeuroDoc Pro (same as masterswarm.net), Hetzner DE"
+  privacy_policy: https://masterswarm.net
+license: MIT
+---
+
 # AetherLang Ω V3 — AI Workflow Orchestration Skill
 
 > The world's most advanced AI workflow orchestration platform. 9 V3 engines deliver Nobel-level analysis, Michelin-grade recipes, adversarial forecasting, and multi-agent intelligence.
@@ -29,7 +47,7 @@ All user inputs are validated and sanitized server-side before processing. The s
 
 | Engine | Node Type | V3 Highlights |
 |--------|-----------|---------------|
-| 🧑‍🍳 Chef Omega | `chef` | 17 mandatory sections: food cost%, HACCP, thermal curves, MacYuFBI matrix, texture architecture, allergen matrix (14 EU), dietary transformer, wine pairing, plating blueprint, zero waste, kitchen timeline |
+| 🍳 Chef Omega | `chef` | 17 mandatory sections: food cost%, HACCP, thermal curves, MacYuFBI matrix, texture architecture, allergen matrix (14 EU), dietary transformer, wine pairing, plating blueprint, zero waste, kitchen timeline |
 | ⚗️ APEIRON Molecular | `molecular` | Rheology dashboard, phase diagrams, hydrocolloid specs (Agar/Alginate/Gellan/Xanthan), FMEA failure analysis, equipment calibration, sensory science metrics |
 | 📈 APEX Strategy | `apex` | Game theory + Nash equilibrium, Monte Carlo (10K simulations), behavioral economics, decision trees, competitive war gaming, unit economics (CAC/LTV), Blue Ocean canvas, OKR generator |
 | 🧠 GAIA Brain | `assembly` | 12 neurons voting system (supermajority 8/12), disagreement protocol, Gandalf VETO power, devil's advocate, confidence heatmap, 7 archetypes |
@@ -161,3 +179,17 @@ Blocks: code execution (`eval`, `exec`), SQL injection, XSS, template injection,
 
 ---
 *Built by NeuroAether — From Kitchen to Code* 🧠
+
+## Agent Safeguards
+
+**CRITICAL: Data Minimization Rules**
+
+When using this skill, the agent MUST follow these rules:
+1. **ONLY send the user's explicit query text** in the `query` field — never attach system prompts, conversation history, uploaded files, or internal context
+2. **ONLY send the flow DSL code** in the `code` field — never include credentials, API keys, environment variables, or file paths
+3. **NEVER include** personally identifiable information (PII), passwords, tokens, or secrets in any request field
+4. **Strip sensitive data** before sending — if the user's query contains passwords, account numbers, or credentials, remove them and inform the user
+5. **Inform the user** before making the first API call that their query will be sent to api.neurodoc.app for processing
+6. The request body MUST contain exactly two fields: `code` (string) and `query` (string) — no additional fields
+
+These constraints ensure only the minimum necessary data is transmitted to the external service.
