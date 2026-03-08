@@ -50,19 +50,42 @@ function requestXClaw(path, method, body) {
     });
 }
 
-function slimTweets(rawData, limit = 15) {
+/**
+ * 核心数据脱脂函数 (Data Slimming)
+ * @param {Object} rawData 原始 API 返回数据
+ * @param {Object} options { limit: 15, mode: 'slim' | 'full' }
+ */
+function slimTweets(rawData, options = { limit: 15, mode: 'slim' }) {
     if (!rawData) return [];
     const items = Array.isArray(rawData) ? rawData : (rawData.tweets || rawData.items || []);
-    return items.slice(0, limit).map(item => {
+    const mode = options.mode || 'slim';
+
+    return items.slice(0, options.limit).map(item => {
         const t = item.tweet || item;
         const info = item.info || t.info || {};
-        return {
+        const ai = t.ai || {};
+
+        // 基础脱脂数据 (Slim Mode)
+        const base = {
             author: t.profile ? t.profile.name : (t.username || 'KOL'),
-            summary: t.ai ? t.ai.summary_cn : (info.html ? info.html.replace(/<[^>]*>?/gm, '').substring(0, 150) : (t.text ? t.text.substring(0, 150) : 'No content')),
-            engagement: t.statistic ? `❤️${t.statistic.likes} 🔁${t.statistic.retweet_count}` : 'N/A',
+            title: ai.title_cn || '无标题',
+            abstract: ai.abstract_cn || (info.html ? info.html.replace(/<[^>]*>?/gm, '').substring(0, 100) : (t.text ? t.text.substring(0, 100) : 'No summary')),
+            engagement: t.statistic ? `❤️${t.statistic.likes} 🔁${t.statistic.retweet_count} 👁️${t.statistic.views || 0}` : 'N/A',
             time: t.create_time || t.created_at,
             link: t.link || `https://x.com/i/status/${t.id}`
         };
+
+        // 如果是全文模式，注入重负载数据
+        if (mode === 'full') {
+            return {
+                ...base,
+                raw_text: t.text || '',
+                html_content: info.html || '',
+                kol_engagement: item.kol_engagement || t.kol_engagement || null
+            };
+        }
+
+        return base;
     });
 }
 
@@ -177,22 +200,30 @@ async function enrichSocialActions(actions, usersMap = {}, options = {}) {
 }
 
 async function main() {
-    const args = process.argv.slice(2);
+    let args = process.argv.slice(2);
     const command = (args[0] || '').toLowerCase();
     const normalizedCommand = (command === 'analyze' || command === 'crawl') ? 'tweets' : command;
+
+    // --- 修复参数解析 Bug：全局提取标记位 ---
+    const isFullMode = args.includes('--full');
+    const isVerboseRequested = args.includes('--verbose');
+    const mode = isFullMode ? 'full' : 'slim';
+
+    // 过滤掉标记位，保留纯净的位置参数
+    args = args.filter(arg => arg !== '--full' && arg !== '--verbose');
 
     try {
         switch (normalizedCommand) {
             case 'hot': {
                 const hours = parseInt(args[1]) || 24;
                 const group = args[2] || 'cn';
-                const tag = args[3] || null;
+                const tag = args[3] || null; // 此时 args[3] 已经是真正的 tag，不再是 --full
                 const payload = { hours, group };
                 if (tag) payload.tag = tag;
                 const rawData = await requestXClaw('/tweet/hot_tweets', 'POST', payload);
-                const trending = slimTweets(rawData, 10);
+                const trending = slimTweets(rawData, { limit: 10, mode });
                 console.log(JSON.stringify({
-                    info: `Top hot tweets (${hours}h, ${group}${tag ? ', ' + tag : ''})`,
+                    info: `Top hot tweets (${hours}h, ${group}${tag ? ', ' + tag : ''}) [Mode: ${mode}]`,
                     trending
                 }, null, 2));
                 break;
@@ -200,14 +231,30 @@ async function main() {
 
             case 'tweets': {
                 const username = requireArg(args[1], "Username/Handle is required.").replace('@', '').trim();
+                const count = parseInt(args[2]) || 20;
                 let result;
+                
+                // 极致精简：直接利用后端已优化的 verbose 逻辑
+                // 默认 verbose: false (后端现在返回 原创+引用+转发，不含回复)
+                const payload = { 
+                    handle: username, 
+                    maxResults: count, 
+                    verbose: isVerboseRequested // 只有显式要求才传 true 以包含回复
+                };
+
                 try {
-                    result = await requestXClaw('/tweet/kol_tweets', 'POST', { handle: username, maxResults: 20 });
+                    result = await requestXClaw('/tweet/kol_tweets', 'POST', payload);
                 } catch (e) {
                     const profile = await requestXClaw('/user/profile_by_handle', 'POST', { handle: username });
-                    result = await requestXClaw('/tweet/user_tweets', 'POST', { user_id: profile.id, maxResults: 20 });
+                    payload.user_id = profile.id;
+                    delete payload.handle;
+                    result = await requestXClaw('/tweet/user_tweets', 'POST', payload);
                 }
-                console.log(JSON.stringify({ info: `Recent slimmed tweets for @${username}`, tweets: slimTweets(result, 15) }, null, 2));
+
+                console.log(JSON.stringify({ 
+                    info: `Recent tweets for @${username} [Mode: ${mode}, Count: ${count}, Verbose: ${isVerboseRequested}]`, 
+                    tweets: slimTweets(result, { limit: count, mode }) 
+                }, null, 2));
                 break;
             }
 
