@@ -5,7 +5,7 @@ license: Proprietary
 compatibility: Requires network access to https://openclawcash.com
 metadata:
   author: agentwalletapi
-  version: "1.9.6"
+  version: "1.12.0"
   required_env_vars:
     - AGENTWALLETAPI_KEY
   optional_env_vars:
@@ -18,7 +18,7 @@ metadata:
 
 # OpenclawCash Agent API
 
-Interact with OpenclawCash-managed wallets to send native assets and tokens, check balances, and execute agent-safe wallet operations across EVM and Solana networks.
+Interact with OpenclawCash-managed wallets to send native assets and tokens, check balances, execute DEX swaps, and manage Polymarket account + orders via Polygon wallets.
 
 ## Requirements
 
@@ -74,6 +74,8 @@ If MCP is unavailable, use the included tool script to make API calls directly:
 ```bash
 # Read-only (recommended first)
 bash scripts/agentwalletapi.sh wallets
+bash scripts/agentwalletapi.sh user-tag-get
+bash scripts/agentwalletapi.sh user-tag-set my-agent-tag --yes
 bash scripts/agentwalletapi.sh wallet Q7X2K9P
 bash scripts/agentwalletapi.sh wallet "Trading Bot"
 bash scripts/agentwalletapi.sh balance Q7X2K9P
@@ -84,6 +86,7 @@ bash scripts/agentwalletapi.sh tokens mainnet
 export WALLET_EXPORT_PASSPHRASE_OPS='your-strong-passphrase'
 bash scripts/agentwalletapi.sh create "Ops Wallet" sepolia WALLET_EXPORT_PASSPHRASE_OPS --yes
 bash scripts/agentwalletapi.sh import "Treasury Imported" mainnet --yes
+bash scripts/agentwalletapi.sh import "Poly Ops" polygon-mainnet --yes
 # Automation-safe import: read private key from stdin instead of command args
 printf '%s' '<private_key>' | bash scripts/agentwalletapi.sh import "Treasury Imported" mainnet - --yes
 bash scripts/agentwalletapi.sh transfer Q7X2K9P 0xRecipient 0.01 --yes
@@ -91,7 +94,35 @@ bash scripts/agentwalletapi.sh transfer Q7X2K9P 0xRecipient 100 USDC --yes
 bash scripts/agentwalletapi.sh quote mainnet WETH USDC 10000000000000000
 bash scripts/agentwalletapi.sh quote solana-mainnet SOL USDC 10000000 solana
 bash scripts/agentwalletapi.sh swap Q7X2K9P WETH USDC 10000000000000000 0.5 --yes
+# Checkout escrow lifecycle
+bash scripts/agentwalletapi.sh checkout-payreq-create Q7X2K9P 30000000 --yes
+bash scripts/agentwalletapi.sh checkout-payreq-get pr_a1b2c3
+bash scripts/agentwalletapi.sh checkout-escrow-get es_d4e5f6
+bash scripts/agentwalletapi.sh checkout-quick-pay es_d4e5f6 Q7X2K9P --yes
+bash scripts/agentwalletapi.sh checkout-swap-and-pay-quote es_d4e5f6 Q7X2K9P
+bash scripts/agentwalletapi.sh checkout-swap-and-pay-confirm es_d4e5f6 Q7X2K9P 1 --yes
+bash scripts/agentwalletapi.sh checkout-release es_d4e5f6 --yes
+bash scripts/agentwalletapi.sh checkout-refund es_d4e5f6 --yes
+bash scripts/agentwalletapi.sh checkout-cancel es_d4e5f6 --yes
+bash scripts/agentwalletapi.sh checkout-webhooks-list
+# Polymarket setup is user-managed in dashboard Venues settings
+# Direct setup page: https://openclawcash.com/venues/polymarket
+bash scripts/agentwalletapi.sh polymarket-market Q7X2K9P 123456 BUY 25 FAK 0.65 --yes
+bash scripts/agentwalletapi.sh polymarket-account Q7X2K9P
+bash scripts/agentwalletapi.sh polymarket-orders Q7X2K9P OPEN 50
+bash scripts/agentwalletapi.sh polymarket-activity Q7X2K9P 50
+bash scripts/agentwalletapi.sh polymarket-positions Q7X2K9P 100
+bash scripts/agentwalletapi.sh polymarket-cancel Q7X2K9P order_id_here --yes
 ```
+
+### Base-Units Rule (Important)
+
+- `quote.amountIn`, `swap.amountIn`, `approve.amount`, and transfer `value` must be **base-units integer strings** (digits only).
+- Do **not** send decimal strings in these fields (for example, `0.001`), or validation will fail immediately.
+- Examples:
+  - `0.001 ETH` -> `1000000000000000` wei
+  - `1 USDC` (6 decimals) -> `1000000`
+- For transfer, use `amount` when you want human-readable units and let the API convert.
 
 ### Import Input Safety
 
@@ -137,12 +168,8 @@ Content-Type: application/json
 
 - **Agent API (API key auth):** `/api/agent/*`
   - Authenticate with `X-Agent-Key`
-  - Used for autonomous agent execution (wallets list/create/import, transactions, balance, transfer, swap, quote, approve)
-- **Dashboard/User API (session auth):** `/api/wallets/*`
-  - Authenticate with bearer token or `aw_session` cookie
-  - Used for user-managed dashboard operations (including wallet import and wallet creation).
-  - Dashboard wallet creation now requires `exportPassphrase` (minimum 12 characters).
-  - Private-key export requires `exportPassphrase` and is protected by rate limits and temporary lockouts.
+  - Used for autonomous agent execution (wallets list/create/import, transactions, balance, transfer, swap, quote, approve, checkout escrow lifecycle, and polymarket venue operations)
+- Public docs intentionally include only `/api/agent/*` endpoints.
 
 ## Workflow
 
@@ -150,14 +177,38 @@ Content-Type: application/json
 2. `GET /api/agent/wallet?walletId=...` or `?walletLabel=...` or `?walletAddress=...` - Fetch one wallet with native/token balances
 3. Optional wallet lifecycle actions:
    - `POST /api/agent/wallets/create` - Create a new wallet under API-key policy controls
-   - `POST /api/agent/wallets/import` - Import a `mainnet` or `solana-mainnet` wallet under API-key policy controls
+   - `POST /api/agent/wallets/import` - Import a `mainnet`, `polygon-mainnet`, or `solana-mainnet` wallet under API-key policy controls
 4. `GET /api/agent/transactions?walletId=...` (or `walletLabel`/`walletAddress`) - Read merged wallet transaction history (on-chain + app-recorded)
 5. `GET /api/agent/supported-tokens?network=...` or `?chain=evm|solana` - Get recommended common, well-known token list + guidance (requires `X-Agent-Key`)
 6. `POST /api/agent/token-balance` - Check wallet balances (native + token balances; specific token by symbol/address supported)
-7. `POST /api/agent/quote` - Get a swap quote before execution on Uniswap (EVM) or Jupiter (Solana mainnet)
-8. `POST /api/agent/swap` - Execute token swap on Uniswap (EVM) or Jupiter (Solana mainnet)
+7. `POST /api/agent/quote` - Get a swap quote before execution on Uniswap (EVM) or Jupiter (Solana mainnet). `amountIn` is base-units integer string.
+8. `POST /api/agent/swap` - Execute token swap on Uniswap (EVM) or Jupiter (Solana mainnet). `amountIn` is base-units integer string.
 9. `POST /api/agent/transfer` - Send native coin or token on the wallet's chain (optional `chain` guard)
-10. Use returned `txHash` values to confirm transactions
+10. `GET /api/agent/user-tag` and `PUT /api/agent/user-tag` - Read/set the global checkout user tag (set is one-time / immutable once configured)
+11. Optional checkout flow (escrow by global user tag):
+   - `POST /api/agent/checkout/payreq` - Create pay request + escrow
+   - `GET /api/agent/checkout/payreq/:id` - Read pay request
+   - `POST /api/agent/checkout/escrows/:id/funding-confirm` - Confirm funding by tx hash
+   - `POST /api/agent/checkout/escrows/:id/quick-pay` - Direct buyer funding
+   - `POST /api/agent/checkout/escrows/:id/swap-and-pay` - Quote/execute swap funding
+   - `GET /api/agent/checkout/escrows/:id` - Read escrow state
+   - `POST /api/agent/checkout/escrows/:id/accept` - Accept as buyer
+   - `POST /api/agent/checkout/escrows/:id/proof` - Submit proof
+   - `POST /api/agent/checkout/escrows/:id/dispute` - Open dispute
+   - `POST /api/agent/checkout/escrows/:id/release` - Release funds
+   - `POST /api/agent/checkout/escrows/:id/refund` - Refund funds
+   - `POST /api/agent/checkout/escrows/:id/cancel` - Cancel escrow
+   - `GET|POST /api/agent/checkout/webhooks` and `PATCH|DELETE /api/agent/checkout/webhooks/:id` - Manage webhooks
+12. Optional Polymarket venue flow (polygon-mainnet wallets only):
+   - Prerequisite: user configures Polymarket in dashboard Venues settings for that wallet
+   - `POST /api/agent/venues/polymarket/orders/limit` - Place BUY/SELL limit orders
+   - `POST /api/agent/venues/polymarket/orders/market` - Place BUY/SELL market orders
+   - `GET /api/agent/venues/polymarket/account` - Read account summary
+   - `GET /api/agent/venues/polymarket/orders` - List open orders
+   - `POST /api/agent/venues/polymarket/orders/cancel` - Cancel an order
+   - `GET /api/agent/venues/polymarket/activity` - List trade activity
+   - `GET /api/agent/venues/polymarket/positions` - List open positions (open-market filtered, includes PnL fields)
+13. Use returned `txHash` / `orderId` values to confirm execution and lifecycle status
 
 ### Approval Handling For Agents
 
@@ -198,14 +249,39 @@ Example:
 | `/api/agent/wallets` | GET | Yes | List wallets (discovery; optional `includeBalances=true` for native balances) |
 | `/api/agent/wallet` | GET | Yes | Get one wallet detail with native/token balances |
 | `/api/agent/wallets/create` | POST | Yes | Create a new API-key-managed wallet |
-| `/api/agent/wallets/import` | POST | Yes | Import a mainnet/solana-mainnet wallet via API key |
+| `/api/agent/wallets/import` | POST | Yes | Import a mainnet/polygon-mainnet/solana-mainnet wallet via API key |
 | `/api/agent/transactions` | GET | Yes | List per-wallet transaction history |
 | `/api/agent/transfer` | POST | Yes | Send native/token transfers (EVM + Solana) |
 | `/api/agent/swap` | POST | Yes | Execute DEX swap (Uniswap on EVM, Jupiter on Solana mainnet) |
 | `/api/agent/quote` | POST | Yes | Get swap quotes (Uniswap on EVM, Jupiter on Solana mainnet) |
 | `/api/agent/token-balance` | POST | Yes | Check balances |
 | `/api/agent/supported-tokens` | GET | Yes | List recommended common, well-known tokens per network |
+| `/api/agent/user-tag` | GET | Yes | Read the global checkout user tag for the API key owner |
+| `/api/agent/user-tag` | PUT | Yes | Set the global checkout user tag once (immutable after set) |
 | `/api/agent/approve` | POST | Yes | Approve spender for ERC-20 token (EVM only) |
+| `/api/agent/checkout/payreq` | POST | Yes | Create checkout pay request + escrow |
+| `/api/agent/checkout/payreq/:id` | GET | Yes | Read checkout pay request |
+| `/api/agent/checkout/escrows/:id/funding-confirm` | POST | Yes | Confirm escrow funding tx |
+| `/api/agent/checkout/escrows/:id/quick-pay` | POST | Yes | Directly fund escrow from buyer wallet |
+| `/api/agent/checkout/escrows/:id/swap-and-pay` | POST | Yes | Quote/execute swap + fund escrow |
+| `/api/agent/checkout/escrows/:id` | GET | Yes | Read escrow lifecycle details |
+| `/api/agent/checkout/escrows/:id/accept` | POST | Yes | Accept escrow as buyer |
+| `/api/agent/checkout/escrows/:id/proof` | POST | Yes | Submit seller proof |
+| `/api/agent/checkout/escrows/:id/dispute` | POST | Yes | Open escrow dispute |
+| `/api/agent/checkout/escrows/:id/release` | POST | Yes | Release escrow funds |
+| `/api/agent/checkout/escrows/:id/refund` | POST | Yes | Refund escrow funds |
+| `/api/agent/checkout/escrows/:id/cancel` | POST | Yes | Cancel escrow |
+| `/api/agent/checkout/webhooks` | GET | Yes | List checkout webhooks |
+| `/api/agent/checkout/webhooks` | POST | Yes | Create checkout webhook |
+| `/api/agent/checkout/webhooks/:id` | PATCH | Yes | Update checkout webhook |
+| `/api/agent/checkout/webhooks/:id` | DELETE | Yes | Delete checkout webhook |
+| `/api/agent/venues/polymarket/orders/limit` | POST | Yes | Place Polymarket limit order |
+| `/api/agent/venues/polymarket/orders/market` | POST | Yes | Place Polymarket market order |
+| `/api/agent/venues/polymarket/account` | GET | Yes | Read Polymarket account summary |
+| `/api/agent/venues/polymarket/orders` | GET | Yes | List Polymarket open orders |
+| `/api/agent/venues/polymarket/orders/cancel` | POST | Yes | Cancel Polymarket order |
+| `/api/agent/venues/polymarket/activity` | GET | Yes | List Polymarket trade activity |
+| `/api/agent/venues/polymarket/positions` | GET | Yes | List Polymarket open positions (open-market filtered with PnL fields) |
 
 ## Agent Wallet Create/Import (Agent API)
 
@@ -220,7 +296,7 @@ Behavior notes:
   - `allowWalletCreation` for create
   - `allowWalletImport` for import
 - Both are rate-limited per API key. Exceeding the limit returns `429` with `Retry-After`.
-- Agent import supports `mainnet` and `solana-mainnet`.
+- Agent import supports `mainnet`, `polygon-mainnet`, and `solana-mainnet`.
 - Agent wallet create requires:
   - `exportPassphrase` (minimum 12 characters)
   - `exportPassphraseStorageType`
@@ -236,6 +312,23 @@ Behavior notes:
     - `exportPassphraseStorageRef`
     - `confirmExportPassphraseSaved: true`
   - For MCP and the legacy CLI fallback, env-backed storage is the strongest path because the local tool can verify the env var exists before wallet creation.
+
+## Polymarket Venue Flow (Agent API)
+
+- Polymarket execution is available only for EVM wallets on `polygon-mainnet`.
+- Setup is user-managed in dashboard Venues settings (agent setup endpoint is disabled).
+- Then place orders:
+  - `POST /api/agent/venues/polymarket/orders/limit` with `tokenId`, `side`, `price`, `size`
+  - `POST /api/agent/venues/polymarket/orders/market` with `tokenId`, `side`, `amount`, optional `orderType` and `worstPrice`
+- Read and lifecycle endpoints:
+  - `GET /api/agent/venues/polymarket/account`
+  - `GET /api/agent/venues/polymarket/orders`
+  - `POST /api/agent/venues/polymarket/orders/cancel` with `orderId`
+  - `GET /api/agent/venues/polymarket/activity`
+  - `GET /api/agent/venues/polymarket/positions`
+- Positions are sourced from Polymarket open positions and filtered to open markets only.
+- Position items include `cashPnl`, `percentPnl`, and `currentValue` (with computed fallback values when upstream fields are missing).
+- Wallet policy checks still run before order execution.
 
 ## Transfer Examples
 

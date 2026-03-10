@@ -11,18 +11,50 @@
 ## Security Notes
 
 - Start with read-only calls first (`wallets`, `wallet`, `balance`, `supported-tokens`), preferably on testnets.
-- Write actions (`create`, `import`, `transfer`, `swap`, `approve`) are high-risk and should use explicit confirmation in the CLI (`--yes`).
+- Write actions (`create`, `import`, `transfer`, `swap`, `approve`, `polymarket-*`) are high-risk and should use explicit confirmation in the CLI (`--yes`).
 - `POST /api/agent/wallets/import` sends a private key to OpenclawCash for encrypted storage and managed execution.
 - Wallet import and wallet creation are disabled unless the API key has permission enabled in dashboard (`allowWalletImport`, `allowWalletCreation`).
+- API keys may also be scoped by chain (`all`/`evm`/`solana`) and by wallet (`all wallets` or a single wallet).
 
 ## API Surfaces
 
 - **Agent API (`/api/agent/*`)**: authenticate with `X-Agent-Key`.
-- **Dashboard/User API (`/api/wallets/*`)**: authenticate with bearer token or session cookie.
-  - `POST /api/wallets` requires `exportPassphrase` (minimum 12 characters).
-  - Private-key export requires `exportPassphrase` and is protected by rate limits and temporary lockouts.
+- Public docs intentionally include only `/api/agent/*` endpoints.
 
-Use Agent API for autonomous execution. Use Dashboard API for user-account management actions.
+## Global User Tag (Checkout Identity)
+
+Checkout uses one account-level user tag for seller/buyer identity.
+
+Read current value:
+```
+GET /api/agent/user-tag
+X-Agent-Key: occ_your_api_key
+```
+
+Set value once (immutable after set):
+```
+PUT /api/agent/user-tag
+Content-Type: application/json
+X-Agent-Key: occ_your_api_key
+```
+
+Request:
+```json
+{
+  "userTag": "studio-agent"
+}
+```
+
+Response:
+```json
+{
+  "userTag": "studio-agent"
+}
+```
+
+Notes:
+- Tag format: lowercase letters/numbers with `.`, `_`, `-`, length 3-64.
+- `PUT` returns `409 user_tag_locked` if already set.
 
 ## List Wallets
 
@@ -172,7 +204,7 @@ Response:
 
 Notes:
 - API key must have wallet import enabled (`allowWalletImport`).
-- Supported networks: `mainnet`, `solana-mainnet`.
+- Supported networks: `mainnet`, `polygon-mainnet`, `solana-mainnet`.
 - Endpoint is rate-limited per API key; on limit exceeded returns `429` + `Retry-After`.
 
 ## Wallet Transaction History
@@ -475,6 +507,276 @@ Solana (Jupiter) example:
 }
 ```
 
+## Checkout & Escrow (Agent API)
+
+All checkout endpoints require:
+- `X-Agent-Key: occ_your_api_key`
+- Write calls require `Idempotency-Key`
+
+### Create Pay Request
+
+```
+POST /api/agent/checkout/payreq
+```
+
+Creates a signed pay request and escrow wallet.
+
+### Get Pay Request
+
+```
+GET /api/agent/checkout/payreq/:id
+```
+
+Returns pay request details and current escrow linkage.
+
+### Confirm Funding
+
+```
+POST /api/agent/checkout/escrows/:id/funding-confirm
+```
+
+Validates on-chain funding using tx hash + confirmations.
+
+### Get Escrow
+
+```
+GET /api/agent/checkout/escrows/:id
+```
+
+Returns escrow lifecycle state, tx hashes, proof/dispute fields, and settlement values.
+
+### Accept / Proof / Dispute
+
+```
+POST /api/agent/checkout/escrows/:id/accept
+POST /api/agent/checkout/escrows/:id/proof
+POST /api/agent/checkout/escrows/:id/dispute
+```
+
+Use these endpoints to claim buyer role, submit proof, and open a dispute.
+
+### Quick Pay (Direct)
+
+```
+POST /api/agent/checkout/escrows/:id/quick-pay
+```
+
+Direct funding path when buyer wallet already has enough settlement token.
+
+### Swap And Pay
+
+```
+POST /api/agent/checkout/escrows/:id/swap-and-pay
+```
+
+Two-step flow:
+- Quote with `confirm: false`
+- Execute with `confirm: true`
+
+### Release / Refund / Cancel
+
+```
+POST /api/agent/checkout/escrows/:id/release
+POST /api/agent/checkout/escrows/:id/refund
+POST /api/agent/checkout/escrows/:id/cancel
+```
+
+Terminal lifecycle actions for settlement or cancellation.
+
+### Webhooks
+
+```
+GET /api/agent/checkout/webhooks
+POST /api/agent/checkout/webhooks
+PATCH /api/agent/checkout/webhooks/:id
+DELETE /api/agent/checkout/webhooks/:id
+```
+
+Subscribe and manage escrow event deliveries (`escrow.funded`, `escrow.released`, etc.).
+
+## Polymarket Venue Setup
+
+- Agent endpoint setup is disabled.
+- Ask your human to complete setup at: https://openclawcash.com/venues/polymarket
+- After user setup is complete, use the agent venue order/read endpoints below.
+
+## Polymarket Limit Order (Agent API)
+
+```
+POST /api/agent/venues/polymarket/orders/limit
+Content-Type: application/json
+X-Agent-Key: occ_your_api_key
+```
+
+Request:
+```json
+{
+  "walletId": "Q7X2K9P",
+  "tokenId": "123456",
+  "side": "BUY",
+  "price": 0.54,
+  "size": 25
+}
+```
+
+Response:
+```json
+{
+  "venue": "polymarket",
+  "status": "filled",
+  "orderId": "optional-order-id",
+  "txHash": "optional-tx-hash"
+}
+```
+
+## Polymarket Market Order (Agent API)
+
+```
+POST /api/agent/venues/polymarket/orders/market
+Content-Type: application/json
+X-Agent-Key: occ_your_api_key
+```
+
+Request:
+```json
+{
+  "walletId": "Q7X2K9P",
+  "tokenId": "123456",
+  "side": "BUY",
+  "amount": 25,
+  "orderType": "FAK",
+  "worstPrice": 0.65
+}
+```
+
+Response:
+```json
+{
+  "venue": "polymarket",
+  "status": "filled",
+  "orderId": "optional-order-id",
+  "txHash": "optional-tx-hash"
+}
+```
+
+## Polymarket Account Summary (Agent API)
+
+```
+GET /api/agent/venues/polymarket/account?walletId=Q7X2K9P
+X-Agent-Key: occ_your_api_key
+```
+
+Response:
+```json
+{
+  "venue": "polymarket",
+  "walletId": "Q7X2K9P",
+  "network": "polygon-mainnet",
+  "account": {
+    "balanceAllowance": {},
+    "apiKeysCount": 1
+  }
+}
+```
+
+## Polymarket Open Orders (Agent API)
+
+```
+GET /api/agent/venues/polymarket/orders?walletId=Q7X2K9P&status=OPEN&limit=50
+X-Agent-Key: occ_your_api_key
+```
+
+Response:
+```json
+{
+  "venue": "polymarket",
+  "walletId": "Q7X2K9P",
+  "network": "polygon-mainnet",
+  "items": [],
+  "nextCursor": null
+}
+```
+
+## Polymarket Cancel Order (Agent API)
+
+```
+POST /api/agent/venues/polymarket/orders/cancel
+Content-Type: application/json
+X-Agent-Key: occ_your_api_key
+```
+
+Request:
+```json
+{
+  "walletId": "Q7X2K9P",
+  "orderId": "your-order-id"
+}
+```
+
+Response:
+```json
+{
+  "venue": "polymarket",
+  "walletId": "Q7X2K9P",
+  "network": "polygon-mainnet",
+  "status": "cancel_requested",
+  "orderId": "your-order-id"
+}
+```
+
+## Polymarket Activity (Agent API)
+
+```
+GET /api/agent/venues/polymarket/activity?walletId=Q7X2K9P&limit=50
+X-Agent-Key: occ_your_api_key
+```
+
+Response:
+```json
+{
+  "venue": "polymarket",
+  "walletId": "Q7X2K9P",
+  "network": "polygon-mainnet",
+  "items": [],
+  "nextCursor": null
+}
+```
+
+## Polymarket Positions (Agent API)
+
+```
+GET /api/agent/venues/polymarket/positions?walletId=Q7X2K9P&limit=100
+X-Agent-Key: occ_your_api_key
+```
+
+Response:
+```json
+{
+  "venue": "polymarket",
+  "walletId": "Q7X2K9P",
+  "network": "polygon-mainnet",
+  "items": [
+    {
+      "conditionId": "0x...",
+      "question": "Will BTC be above 100k by month end?",
+      "outcome": "Yes",
+      "status": "OPEN",
+      "size": 12.5,
+      "avgPrice": 0.42,
+      "curPrice": 0.47,
+      "currentValue": 5.875,
+      "cashPnl": 0.625,
+      "percentPnl": 11.9
+    }
+  ]
+}
+```
+
+Notes:
+- Positions are sourced from Polymarket open positions (Data API-backed).
+- Response is filtered to open markets only (`closed !== true`, `active !== false`, and not past `endDate`).
+- Position items include `cashPnl`, `percentPnl`, and `currentValue` (with computed fallback values when upstream fields are missing).
+
 ## Token Approval (ERC-20)
 
 ```
@@ -510,6 +812,7 @@ Notes:
 ## Networks
 
 - **mainnet**: Ethereum Mainnet (real ETH, all tokens)
+- **polygon-mainnet**: Polygon PoS Mainnet (real POL + ERC-20 on Polygon)
 - **sepolia**: Sepolia Testnet (test ETH, limited token selection: ETH, USDC, WETH, LINK)
 - **solana-mainnet**: Solana Mainnet (real SOL + SPL tokens)
 - **solana-devnet**: Solana Devnet (dev SOL + test SPL tokens)
@@ -522,6 +825,8 @@ Network is fixed at wallet creation and cannot be changed.
 - Solana token transfers require SOL in the wallet for transaction fees
 - Native SOL transfers account for network fee and may return adjusted transfer values in response
 - Swap supports EVM (Uniswap) and Solana mainnet (Jupiter); Quote supports EVM and Solana mainnet; Approve is EVM-only
+- Polymarket endpoints require a configured `polygon-mainnet` EVM wallet
+- All Polymarket order/read endpoints require exactly one wallet selector (`walletId` or `walletAddress`)
 - Platform fee is deducted from the token amount (not ETH), consistent with ETH transfers
 - Use `amount` for simplicity (human-readable), use `value` when you need precise base-unit control
 - Optional `chain` guard is supported on agent endpoints; mismatches return `400` with `code: "chain_mismatch"`.
