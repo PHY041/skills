@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
+set -o pipefail 2>/dev/null || true
 
 # One-command setup for steps 2..6:
 # 2) Run EC2 bootstrap script
@@ -11,7 +12,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  sudo bash graph-office-suite/scripts/run_mail_webhook_e2e_setup.sh \
+  sudo bash scripts/run_mail_webhook_e2e_setup.sh \
     --domain graphhook.alitar.one \
     --hook-token "<OPENCLAW_HOOK_TOKEN>" \
     [--configure-openclaw-hooks] \
@@ -109,9 +110,9 @@ if [[ "$DRY_RUN" == "true" ]]; then
   info "Dry-run mode enabled: no system changes or API writes will be applied."
 fi
 
-SETUP_SCRIPT="$REPO_ROOT/graph-office-suite/scripts/setup_mail_webhook_ec2.sh"
-SUB_SCRIPT="$REPO_ROOT/graph-office-suite/scripts/mail_subscriptions.py"
-SEND_SCRIPT="$REPO_ROOT/graph-office-suite/scripts/mail_send.py"
+SETUP_SCRIPT="$REPO_ROOT/scripts/setup_mail_webhook_ec2.sh"
+SUB_SCRIPT="$REPO_ROOT/scripts/mail_subscriptions.py"
+SEND_SCRIPT="$REPO_ROOT/scripts/mail_send.py"
 ENV_FILE="/etc/default/graph-mail-webhook"
 ADAPTER_PATH="/graph/mail"
 
@@ -408,9 +409,42 @@ VALIDATION_TOKEN="probe-$(date +%s)"
 if [[ "$DRY_RUN" == "true" ]]; then
   info "[DRY-RUN] GET https://$DOMAIN$ADAPTER_PATH?validationToken=$VALIDATION_TOKEN"
 else
-  VALIDATION_RESULT="$(curl -fsS "https://$DOMAIN$ADAPTER_PATH?validationToken=$VALIDATION_TOKEN")"
-  if [[ "$VALIDATION_RESULT" != "$VALIDATION_TOKEN" ]]; then
-    echo "Validation failed. Expected '$VALIDATION_TOKEN', got '$VALIDATION_RESULT'." >&2
+  VALIDATION_URL="https://$DOMAIN$ADAPTER_PATH?validationToken=$VALIDATION_TOKEN"
+  MAX_VALIDATION_ATTEMPTS=12
+  VALIDATION_SLEEP_SECONDS=5
+  VALIDATION_OK="false"
+  CURL_ERR_FILE="$(mktemp)"
+
+  for attempt in $(seq 1 "$MAX_VALIDATION_ATTEMPTS"); do
+    if VALIDATION_RESULT="$(curl -fsS "$VALIDATION_URL" 2>"$CURL_ERR_FILE")"; then
+      if [[ "$VALIDATION_RESULT" == "$VALIDATION_TOKEN" ]]; then
+        VALIDATION_OK="true"
+        break
+      fi
+      echo "[WARN] HTTPS validation attempt $attempt/$MAX_VALIDATION_ATTEMPTS returned unexpected body."
+    else
+      CURL_CODE="$?"
+      CURL_ERR_MSG="$(tr '\n' ' ' <"$CURL_ERR_FILE")"
+      echo "[WARN] HTTPS validation attempt $attempt/$MAX_VALIDATION_ATTEMPTS failed (curl=$CURL_CODE): $CURL_ERR_MSG"
+    fi
+
+    if [[ "$attempt" -lt "$MAX_VALIDATION_ATTEMPTS" ]]; then
+      sleep "$VALIDATION_SLEEP_SECONDS"
+    fi
+  done
+
+  rm -f "$CURL_ERR_FILE"
+
+  if [[ "$VALIDATION_OK" != "true" ]]; then
+    echo "[FAIL] HTTPS endpoint validation failed after $MAX_VALIDATION_ATTEMPTS attempts." >&2
+    echo "[diag] systemctl status caddy --no-pager" >&2
+    systemctl status caddy --no-pager || true
+    if command -v ss >/dev/null 2>&1; then
+      echo "[diag] ss -ltnp '( sport = :80 or sport = :443 )'" >&2
+      ss -ltnp '( sport = :80 or sport = :443 )' || true
+    fi
+    echo "[diag] journalctl -u caddy -n 80 -l --no-pager" >&2
+    journalctl -u caddy -n 80 -l --no-pager || true
     exit 1
   fi
 fi

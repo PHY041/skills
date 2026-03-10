@@ -3,33 +3,33 @@
 ## List items
 
 ```
-python graph-office-suite/scripts/drive_ops.py list --path / --top 20
-python graph-office-suite/scripts/drive_ops.py list --path /Documentos --top 20
-python graph-office-suite/scripts/drive_ops.py list --path /Documents --top 20
+python scripts/drive_ops.py list --path / --top 20
+python scripts/drive_ops.py list --path /Documentos --top 20
+python scripts/drive_ops.py list --path /Documents --top 20
 ```
 
 ## Upload
 
 ```
-python graph-office-suite/scripts/drive_ops.py upload --local files/briefing.docx --remote /Clients/briefing.docx
+python scripts/drive_ops.py upload --local files/briefing.docx --remote /Clients/briefing.docx
 ```
 
 ## Download
 
 ```
-python graph-office-suite/scripts/drive_ops.py download --remote /Clients/briefing.docx --local /tmp/briefing.docx
+python scripts/drive_ops.py download --remote /Clients/briefing.docx --local /tmp/briefing.docx
 ```
 
 ## Move
 
 ```
-python graph-office-suite/scripts/drive_ops.py move <itemId> --dest /Archive/Processed
+python scripts/drive_ops.py move <itemId> --dest /Archive/Processed
 ```
 
 ## Share link
 
 ```
-python graph-office-suite/scripts/drive_ops.py share <itemId> --scope organization --type view
+python scripts/drive_ops.py share <itemId> --scope organization --type view
 ```
 
 ### Notes

@@ -1,11 +1,17 @@
 {
   "owner": "draeden79",
   "slug": "microsoft-365-graph-openclaw",
-  "displayName": "Microsoft 365 Graph for OpenClaw",
+  "displayName": "Microsoft 365 Graph Openclaw",
   "latest": {
-    "version": "0.1.5",
-    "publishedAt": 1772835050705,
-    "commit": "https://github.com/openclaw/skills/commit/6cb61f098e5e7797708daba700accf9cb60d7387"
+    "version": "0.2.0",
+    "publishedAt": 1773094312836,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.5",
+      "publishedAt": 1772835050705,
+      "commit": "https://github.com/openclaw/skills/commit/6cb61f098e5e7797708daba700accf9cb60d7387"
+    }
+  ]
 }

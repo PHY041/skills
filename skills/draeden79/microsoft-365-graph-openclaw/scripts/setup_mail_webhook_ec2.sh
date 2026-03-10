@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
+set -o pipefail 2>/dev/null || true
 
 # Bootstrap Graph webhook adapter stack on Ubuntu/Debian EC2:
 # - Install Caddy
@@ -19,7 +20,7 @@ Usage:
     --domain graphhook.example.com \
     --hook-url http://127.0.0.1:18789/hooks/wake \
     --hook-token SECRET \
-    --session-key hook:graph-mail \
+    [--session-key hook:graph-mail] \
     --client-state SUPER_SECRET \
     [--repo-root /opt/microsoft-365-graph-openclaw] \
     [--python /usr/bin/python3] \
@@ -31,7 +32,7 @@ Usage:
 Notes:
   - Must run as root (or with sudo).
   - Assumes adapter scripts are available under:
-      <repo-root>/graph-office-suite/scripts/
+      <repo-root>/scripts/
 EOF
 }
 
@@ -56,7 +57,7 @@ run_cmd() {
 DOMAIN=""
 HOOK_URL=""
 HOOK_TOKEN=""
-SESSION_KEY=""
+SESSION_KEY="hook:graph-mail"
 CLIENT_STATE=""
 REPO_ROOT="$(pwd)"
 PYTHON_BIN="/usr/bin/python3"
@@ -83,7 +84,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$DOMAIN" || -z "$HOOK_URL" || -z "$HOOK_TOKEN" || -z "$SESSION_KEY" || -z "$CLIENT_STATE" ]]; then
+if [[ -z "$DOMAIN" || -z "$HOOK_URL" || -z "$HOOK_TOKEN" || -z "$CLIENT_STATE" ]]; then
   echo "Missing required arguments." >&2
   usage
   exit 1
@@ -102,7 +103,7 @@ else
   require_cmd tee
 fi
 
-SCRIPTS_DIR="$REPO_ROOT/graph-office-suite/scripts"
+SCRIPTS_DIR="$REPO_ROOT/scripts"
 ADAPTER_SCRIPT="$SCRIPTS_DIR/mail_webhook_adapter.py"
 WORKER_SCRIPT="$SCRIPTS_DIR/mail_webhook_worker.py"
 SUB_SCRIPT="$SCRIPTS_DIR/mail_subscriptions.py"
@@ -151,12 +152,20 @@ ok "Environment file written"
 echo "[4/7] Configuring Caddy reverse proxy for $DOMAIN"
 if [[ "$DRY_RUN" == "true" ]]; then
   info "[DRY-RUN] write /etc/caddy/Caddyfile"
+  info "[DRY-RUN] caddy validate --config /etc/caddy/Caddyfile"
+  info "[DRY-RUN] systemctl restart caddy"
 else
 cat > /etc/caddy/Caddyfile <<EOF
-$DOMAIN {
+https://$DOMAIN {
     reverse_proxy 127.0.0.1:$ADAPTER_PORT
 }
+
+http://$DOMAIN {
+    redir https://$DOMAIN{uri} 308
+}
 EOF
+  caddy validate --config /etc/caddy/Caddyfile
+  systemctl restart caddy
 fi
 ok "Caddyfile configured for $DOMAIN"
 
@@ -239,7 +248,7 @@ fi
 ok "Renew timer/service created"
 
 run_cmd systemctl daemon-reload
-run_cmd systemctl enable --now caddy
+run_cmd systemctl enable caddy
 run_cmd systemctl enable --now graph-mail-webhook-adapter
 run_cmd systemctl enable --now graph-mail-webhook-worker
 run_cmd systemctl enable --now graph-mail-subscription-renew.timer
@@ -252,6 +261,12 @@ else
     ok "caddy is active"
   else
     echo "[FAIL] caddy is not active"
+    exit 1
+  fi
+  if ss -ltn '( sport = :443 )' | grep -q ':443'; then
+    ok "caddy is listening on :443"
+  else
+    echo "[FAIL] caddy is not listening on :443"
     exit 1
   fi
   if systemctl is-active --quiet graph-mail-webhook-adapter; then
