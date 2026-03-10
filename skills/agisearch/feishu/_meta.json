@@ -1,0 +1,11 @@
+{
+  "owner": "agisearch",
+  "slug": "feishu",
+  "displayName": "Feishu",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773173601584,
+    "commit": null
+  },
+  "history": []
+}

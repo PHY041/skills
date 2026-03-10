@@ -1,0 +1,55 @@
+{
+  "name": "feishu",
+  "version": "1.0.1",
+  "description": "飞书深度集成技能。专为中国企业高压协作环境设计，把消息、审批、会议、文档、多维表格与日程压缩成有优先级、可执行的行动链。",
+  "author": "qclawbot",
+  "license": "MIT-0",
+  "homepage": "https://clawhub.ai",
+  "keywords": [
+    "feishu",
+    "飞书",
+    "审批",
+    "会议纪要",
+    "多维表格",
+    "周报",
+    "okr",
+    "协作中枢",
+    "消息整理",
+    "日程协调"
+  ],
+  "files": {
+    "skill.md": "skill.md"
+  },
+  "capabilities": {
+    "message_intelligence": "把群聊洪流压缩成有优先级的行动项与情报摘要",
+    "approval_acceleration": "预审审批内容、识别风险点、生成有分寸的催办建议",
+    "meeting_execution": "提取会议决策项与待办，并联动任务和表格",
+    "bitable_decision_layer": "把多维表格从静态记录变成动态协作与决策系统",
+    "calendar_coordination": "识别日程冲突并生成更优的协调方案",
+    "document_recall": "进行跨文档搜索、摘要和更新追踪",
+    "cultural_tact": "根据层级、关系和场景自动调整沟通分寸"
+  },
+  "triggers": [
+    "飞书消息太多",
+    "帮我整理群聊",
+    "审批催办",
+    "会议纪要",
+    "多维表格分析",
+    "周报生成",
+    "okr更新",
+    "飞书协作",
+    "日程冲突",
+    "找飞书文档结论"
+  ],
+  "audience": [
+    "中国企业管理者",
+    "项目经理",
+    "跨部门协作负责人",
+    "高压协作环境下的信息中枢型角色",
+    "依赖飞书进行消息、审批、会议与表格协作的团队"
+  ],
+  "openclaw": {
+    "primaryEnv": null,
+    "requires": {}
+  }
+}
