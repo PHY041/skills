@@ -1,0 +1,11 @@
+{
+  "owner": "adshrc",
+  "slug": "devboxes",
+  "displayName": "Openclaw Devboxes Skill",
+  "latest": {
+    "version": "1.4.0",
+    "publishedAt": 1772982305029,
+    "commit": null
+  },
+  "history": []
+}
