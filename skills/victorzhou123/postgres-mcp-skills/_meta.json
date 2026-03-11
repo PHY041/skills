@@ -1,0 +1,11 @@
+{
+  "owner": "victorzhou123",
+  "slug": "postgres-mcp-skills",
+  "displayName": "postgres",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773252740606,
+    "commit": null
+  },
+  "history": []
+}
