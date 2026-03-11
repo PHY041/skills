@@ -1,0 +1,11 @@
+{
+  "owner": "bp602",
+  "slug": "docker-socket-proxy",
+  "displayName": "Docker Socket Proxy",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773172786126,
+    "commit": null
+  },
+  "history": []
+}
