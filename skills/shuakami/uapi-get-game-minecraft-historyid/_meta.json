@@ -1,0 +1,11 @@
+{
+  "owner": "shuakami",
+  "slug": "uapi-get-game-minecraft-historyid",
+  "displayName": "UAPI 查询 MC 曾用名 接口",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773080948164,
+    "commit": null
+  },
+  "history": []
+}
