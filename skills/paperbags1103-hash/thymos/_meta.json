@@ -3,9 +3,15 @@
   "slug": "thymos",
   "displayName": "Thymos — Emotional Engine",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1772961363336,
-    "commit": "https://github.com/openclaw/skills/commit/2270615ace90a871f239d73846cf128e7c188433"
+    "version": "0.1.2",
+    "publishedAt": 1773040496919,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1772961363336,
+      "commit": "https://github.com/openclaw/skills/commit/2270615ace90a871f239d73846cf128e7c188433"
+    }
+  ]
 }
