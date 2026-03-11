@@ -3,9 +3,15 @@
   "slug": "zodi-ai-bazi",
   "displayName": "Zodi AI Bazi",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773210479378,
-    "commit": "https://github.com/openclaw/skills/commit/9192f6b8882ebcece9ab44b444ef26d759c0ed6b"
+    "version": "1.0.4",
+    "publishedAt": 1773211353876,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773210479378,
+      "commit": "https://github.com/openclaw/skills/commit/9192f6b8882ebcece9ab44b444ef26d759c0ed6b"
+    }
+  ]
 }
