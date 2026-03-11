@@ -1,0 +1,11 @@
+{
+  "owner": "helloeveryworlds",
+  "slug": "moss-transcribe-diarize",
+  "displayName": "MOSS Transcribe Diarize API Skill",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773217163665,
+    "commit": null
+  },
+  "history": []
+}
