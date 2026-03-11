@@ -1,0 +1,11 @@
+{
+  "owner": "agisearch",
+  "slug": "converter",
+  "displayName": "Converter",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773035403122,
+    "commit": null
+  },
+  "history": []
+}
