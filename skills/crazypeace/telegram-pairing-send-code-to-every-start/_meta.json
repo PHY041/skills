@@ -3,11 +3,16 @@
   "slug": "telegram-pairing-send-code-to-every-start",
   "displayName": "总是响应未配对用户的 /start 消息 | Always respond to /start messages from unpaired users",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1772420123549,
-    "commit": "https://github.com/openclaw/skills/commit/432200992c1edc914b36c2d8f806add3c84777d8"
+    "version": "1.0.2",
+    "publishedAt": 1773315957611,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1772420123549,
+      "commit": "https://github.com/openclaw/skills/commit/432200992c1edc914b36c2d8f806add3c84777d8"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770569360564,
