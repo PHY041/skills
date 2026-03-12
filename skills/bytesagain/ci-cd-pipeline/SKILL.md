@@ -7,22 +7,24 @@ description: >-
 
 CI/CD流水线配置。GitHub Actions、GitLab CI、Jenkins、Docker构建、测试、部署。CI/CD pipeline configs for GitHub Actions, GitLab CI, Jenkins, Docker. CI/CD、DevOps。
 
-## Commands
+## 如何使用
 
-- `github` — github
-- `gitlab` — gitlab
-- `jenkins` — jenkins
-- `docker` — docker
-- `test` — test
-- `deploy` — deploy
+1. 选择你需要的功能命令
+2. 输入你的具体需求描述
+3. 获取专业的输出结果
+4. 根据需要调整和完善
 
-## Usage
+## 命令列表
 
-Run any command with your input to get started. Use `help` to see all available commands.
+| 命令 | 功能 |
+|------|------|
+| `github` | github |
+| `gitlab` | gitlab |
+| `jenkins` | jenkins |
+| `docker` | docker |
+| `test` | test |
+| `deploy` | deploy |
 
-## About
-
-Part of the BytesAgain productivity toolkit. Visit [bytesagain.com](https://bytesagain.com) for more tools.
 
 ---
-Powered by BytesAgain | bytesagain.com | hello@bytesagain.com
+*CI/CD Pipeline by BytesAgain*

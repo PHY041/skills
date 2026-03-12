@@ -1,11 +1,17 @@
 {
   "owner": "bytesagain",
   "slug": "ci-cd-pipeline",
-  "displayName": "CI/CD Pipeline",
+  "displayName": "Ci Cd Pipeline",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773163066495,
-    "commit": "https://github.com/openclaw/skills/commit/ffddb3b8732e52e76a25ff2d879dc8817d94b733"
+    "version": "1.0.1",
+    "publishedAt": 1773281749189,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773163066495,
+      "commit": "https://github.com/openclaw/skills/commit/ffddb3b8732e52e76a25ff2d879dc8817d94b733"
+    }
+  ]
 }
