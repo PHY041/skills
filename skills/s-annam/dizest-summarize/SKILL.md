@@ -8,7 +8,7 @@ metadata: {"openclaw":{"emoji":"📝","requires":{"env":["DIZEST_API_KEY"]}}}
 
 Summarize long-form content and turn it into structured, searchable knowledge. Powered by the API behind [Dizest: AI Summarizer](https://www.dizest.ai) — available on the [App Store](https://apps.apple.com/app/id6752311120) and [Google Play](https://play.google.com/store/apps/details?id=com.ideas116.dizest).
 
-**Base URL:** `https://api.116ideas.com`
+**Base URL:** `https://api.dizest.ai`
 
 Visit [www.dizest.ai](https://www.dizest.ai) for more information about the product.
 
@@ -42,13 +42,20 @@ All content analysis, URL detection, extraction, paywall handling, and execution
 
 ## Authentication
 
-All requests require the `x-api-key` header. The value should come from the `DIZEST_API_KEY` environment variable. Only paid users have valid API keys.
+All requests require the `x-api-key` header. The value should come from the `DIZEST_API_KEY` environment variable.
 
 ```
 x-api-key: $DIZEST_API_KEY
 ```
 
-If the `DIZEST_API_KEY` environment variable is not set and the user has not provided an API key, prompt them to create one at [dizest.ai/api/keys](http://dizest.ai/api/keys) (requires a paid Dizest account).
+If the `DIZEST_API_KEY` environment variable is not set and the user has not provided an API key, tell them how to get one:
+
+1. **Download Dizest** from [dizest.ai](https://www.dizest.ai/#download) — available on iOS, Android, and macOS (coming soon)
+2. **Create an account** and sign in
+3. **Activate your account** through the app (one-time setup)
+4. **Generate your API key** at [dizest.ai/api/keys](https://dizest.ai/api/keys) — sign in with the same account
+
+Account activation through the app is required to generate API keys. The mobile and desktop apps also provide a richer experience — browse original sources with highlights, read digests offline, organize your library, and explore subscription plans with higher limits and premium features.
 
 ---
 
@@ -61,7 +68,7 @@ There are two steps: **create an execution**, then **retrieve the results**.
 **Endpoint:**
 
 ```
-POST https://api.116ideas.com/v1/summarize
+POST https://api.dizest.ai/v1/summarize
 ```
 
 **Headers:**
@@ -128,7 +135,7 @@ Use the `execution_id` from Step 1 to retrieve the summary. There are two method
 #### Preferred: Server-Sent Events (SSE) Stream
 
 ```
-GET https://api.116ideas.com/v1/executions/<execution_id>/events
+GET https://api.dizest.ai/v1/executions/<execution_id>/events
 ```
 
 **Headers:**
@@ -146,7 +153,7 @@ The server responds with a stream of Server-Sent Events. Read events from the st
 If SSE is not supported by the agent's runtime, poll the result endpoint instead.
 
 ```
-GET https://api.116ideas.com/v1/executions/<execution_id>/result
+GET https://api.dizest.ai/v1/executions/<execution_id>/result
 ```
 
 **Headers:**
@@ -240,8 +247,8 @@ User says: *"Summarize https://example.com/research-paper but focus on the metho
 
 | Problem | Cause | Resolution |
 |---|---|---|
-| `401 Unauthorized` | Missing or invalid `x-api-key` header. | Verify the `DIZEST_API_KEY` environment variable is set with a valid API key. Only paid users have valid keys. |
-| `403 Forbidden` | The API key does not have access. | Confirm the key belongs to a paid account. |
+| `401 Unauthorized` | Missing or invalid `x-api-key` header. | Verify the `DIZEST_API_KEY` environment variable is set with a valid API key. API keys require an activated Dizest account — see the Authentication section above for setup steps. |
+| `403 Forbidden` | The API key does not have access. | Confirm the key belongs to an activated account. |
 | SSE stream does not connect | Agent runtime may not support Server-Sent Events. | Fall back to polling `GET /v1/executions/<execution_id>/result`. |
 | Polling returns no result | The execution is still processing. | Continue polling every 2–3 seconds. Allow sufficient time for longer content. |
 | Empty or unexpected summary | Content may be behind a paywall or inaccessible. | Inform the user. Do not attempt client-side workarounds — the server handles extraction. |
