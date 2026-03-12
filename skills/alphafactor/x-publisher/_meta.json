@@ -1,0 +1,11 @@
+{
+  "owner": "alphafactor",
+  "slug": "x-publisher",
+  "displayName": "X tweet publisher",
+  "latest": {
+    "version": "1.0.5",
+    "publishedAt": 1773118015973,
+    "commit": null
+  },
+  "history": []
+}
