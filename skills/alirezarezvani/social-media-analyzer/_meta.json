@@ -3,11 +3,16 @@
   "slug": "social-media-analyzer",
   "displayName": "Social Media Analyzer",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770402557908,
-    "commit": "https://github.com/openclaw/skills/commit/930ee63948e293dadf732355312f366870ef4ab1"
+    "version": "2.1.1",
+    "publishedAt": 1773070266753,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770402557908,
+      "commit": "https://github.com/openclaw/skills/commit/930ee63948e293dadf732355312f366870ef4ab1"
+    },
     {
       "version": "0.1.0",
       "publishedAt": 1769778124073,
