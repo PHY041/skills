@@ -1,0 +1,11 @@
+{
+  "owner": "openwaygate",
+  "slug": "youtube-memberships-level",
+  "displayName": "YouTube Memberships Level",
+  "latest": {
+    "version": "0.10.6-3",
+    "publishedAt": 1773331711803,
+    "commit": null
+  },
+  "history": []
+}
