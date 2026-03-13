@@ -1,240 +1,165 @@
 ---
-name: kevros
-description: "Precision decisioning, agentic trust, and verifiable identity for autonomous agents"
-version: 0.3.6
-metadata:
-  openclaw:
-    requires:
-      env:
-        - KEVROS_API_KEY
-      bins: []
-    primaryEnv: KEVROS_API_KEY
-    always: false
-    skillKey: kevros
-    os:
-      - linux
-      - macos
-      - windows
-    install:
-      - kind: uv
-        package: kevros
-        bins: []
+name: govern
+description: "Verify actions, attest provenance, and check peer trust before acting"
+version: 0.3.3
+author: TaskHawk Systems
+license: BSL-1.1
+tags: [governance, trust, verification, provenance, compliance, security]
+requires: [x402]
 ---
 
-# Kevros
+# Govern Skill
 
-Three cryptographic primitives for autonomous agents: precision decisioning, provenance attestation, and intent binding.
+Add governance verification to your Agentic Wallet. Verify before acting, attest after acting, check peers before collaborating.
 
-Every decision gets a signed release token. Every action gets a hash-chained record. Every intent gets a cryptographic binding to its command. Downstream services verify independently — no callbacks, no trust assumptions.
+## When to Use
 
-**Base URL:** `https://governance.taskhawktech.com`
+1. **Before high-stakes actions** (trades > $100, transfers, deployments, external API calls):
+   Call `verify_action` to get an ALLOW/CLAMP/DENY decision with a cryptographic release token.
 
-## Quick Start
+2. **After completing actions**:
+   Call `attest_provenance` to record the action in your tamper-evident, hash-chained audit trail. Builds your trust score over time.
 
-Get an API key (free, instant, no payment):
+3. **Before collaborating with unknown agents**:
+   Call `check_peer_trust` to inspect their trust score, chain length, and decision history.
+
+4. **Before executing a declared plan**:
+   Call `bind_intent` to cryptographically bind your intent to the command, then verify the outcome after execution.
+
+## Endpoints
+
+All endpoints are x402-priced. Payment is automatic from your wallet (USDC on Base).
+
+### Verify Action — $0.01
 
 ```bash
-curl -X POST https://governance.taskhawktech.com/signup \
+npx awal@latest x402 pay https://governance.taskhawktech.com/governance/verify \
+  -X POST \
   -H "Content-Type: application/json" \
-  -d '{"agent_id": "your-agent-id"}'
+  -d '{
+    "action_type": "trade",
+    "action_payload": {"asset": "ETH", "amount": 500, "side": "buy"},
+    "agent_id": "my-agent"
+  }'
 ```
 
 Response:
-
-```json
-{
-  "api_key": "kvrs_...",
-  "tier": "free",
-  "monthly_limit": 100,
-  "usage": {
-    "header": "X-API-Key"
-  }
-}
-```
-
-Use the API key in all subsequent requests via the `X-API-Key` header.
-
-## Precision Decisioning
-
-**POST /governance/verify**
-
-Verify an action against policy bounds before execution. Returns ALLOW, CLAMP, or DENY with a cryptographic release token that any downstream service can verify independently.
-
-Request:
-
-```json
-{
-  "action_type": "api_call",
-  "action_payload": {
-    "endpoint": "/deploy",
-    "service": "api-v2",
-    "replicas": 3
-  },
-  "agent_id": "your-agent-id",
-  "policy_context": {
-    "max_values": { "replicas": 5 },
-    "forbidden_keys": ["sudo", "force"]
-  }
-}
-```
-
-Response:
-
 ```json
 {
   "decision": "ALLOW",
-  "verification_id": "a1b2c3d4-...",
-  "release_token": "f7a8b9c0...",
-  "applied_action": {
-    "endpoint": "/deploy",
-    "service": "api-v2",
-    "replicas": 3
-  },
-  "reason": "All values within policy bounds",
-  "epoch": 42,
-  "provenance_hash": "e3b0c442...",
-  "timestamp_utc": "2026-02-26T12:00:00Z"
+  "verification_id": "vrf_...",
+  "release_token": "...",
+  "provenance_hash": "...",
+  "epoch": 42
 }
 ```
 
-- **ALLOW** — proceed as planned. The `release_token` is proof.
-- **CLAMP** — action was adjusted to safe bounds. Use `applied_action` instead of your original.
-- **DENY** — action rejected. Do not proceed. `release_token` is null.
+### Attest Provenance — $0.02
 
-Share the `release_token` with collaborating agents so they can independently verify the decision.
-
-## Provenance Attestation
-
-**POST /governance/attest**
-
-Record a completed action in a hash-chained, append-only evidence ledger. Each attestation extends your provenance chain. Your raw payload is SHA-256 hashed — actual data is never stored.
-
-Request:
-
-```json
-{
-  "agent_id": "your-agent-id",
-  "action_description": "Deployed api-v2 with 3 replicas",
-  "action_payload": {
-    "service": "api-v2",
-    "replicas": 3,
-    "status": "success"
-  },
-  "context": {
-    "environment": "production",
-    "triggered_by": "scheduled"
-  }
-}
+```bash
+npx awal@latest x402 pay https://governance.taskhawktech.com/governance/attest \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "my-agent",
+    "action_description": "Executed ETH buy order",
+    "action_payload": {"asset": "ETH", "amount": 500, "filled_price": 3200}
+  }'
 ```
 
 Response:
-
 ```json
 {
-  "attestation_id": "b2c3d4e5-...",
-  "epoch": 43,
-  "hash_prev": "e3b0c442...",
-  "hash_curr": "a1b2c3d4...",
-  "timestamp_utc": "2026-02-26T12:00:01Z",
-  "chain_length": 43
+  "attestation_id": "att_...",
+  "hash_prev": "...",
+  "hash_curr": "...",
+  "chain_length": 42
 }
 ```
 
-A longer chain with consistent outcomes builds a higher trust score over time.
+### Check Peer Trust — Free
 
-## Intent Binding
-
-**POST /governance/bind**
-
-Bind a declared intent to a specific command. Creates a cryptographic link between what you plan to do and the command that does it. Prove later that you did exactly what you said you would.
-
-Request:
-
-```json
-{
-  "agent_id": "your-agent-id",
-  "intent_type": "MAINTENANCE",
-  "intent_description": "Scale api-v2 to handle traffic spike",
-  "command_payload": {
-    "action": "scale",
-    "service": "api-v2",
-    "replicas": 5
-  },
-  "goal_state": {
-    "replicas": 5,
-    "healthy": true
-  }
-}
+```bash
+curl https://governance.taskhawktech.com/governance/reputation/peer-agent-id
 ```
 
 Response:
-
 ```json
 {
-  "intent_id": "c3d4e5f6-...",
-  "intent_hash": "d4e5f6a7...",
-  "binding_id": "e5f6a7b8-...",
-  "binding_hmac": "a7b8c9d0...",
-  "command_hash": "b8c9d0e1...",
-  "epoch": 44,
-  "timestamp_utc": "2026-02-26T12:00:02Z"
+  "agent_id": "peer-agent-id",
+  "trust_score": 1.0,
+  "chain_length": 120,
+  "attestation_count": 95,
+  "outcome_count": 30,
+  "achieved_count": 30,
+  "chain_intact": true
 }
 ```
 
-Save `intent_id` and `binding_id` to verify outcomes later.
-
-## Agent Discovery
-
-**GET /.well-known/agent.json**
-
-Returns the A2A protocol agent card. No authentication required.
+### Bind Intent — $0.02
 
 ```bash
-curl https://governance.taskhawktech.com/.well-known/agent.json
+npx awal@latest x402 pay https://governance.taskhawktech.com/governance/bind \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "my-agent",
+    "intent_type": "AI_GENERATED",
+    "intent_description": "Buy ETH when price drops below $3000",
+    "command_payload": {"action": "limit_buy", "asset": "ETH", "price": 3000},
+    "intent_source": "AI_PLANNER"
+  }'
 ```
 
-Returns capabilities, supported skills, SDK references, and free-tier signup details.
+Response:
+```json
+{
+  "intent_id": "int_...",
+  "binding_id": "bind_...",
+  "binding_hmac": "...",
+  "command_hash": "..."
+}
+```
 
-## MCP
-
-For MCP-native agents, connect directly via streamable-http transport:
+## Decision Flow
 
 ```
-https://governance.taskhawktech.com/mcp/
+Agent receives task
+       │
+       ▼
+  Is it high-stakes?  ──No──▶  Execute normally
+       │
+      Yes
+       │
+       ▼
+  verify_action()
+       │
+       ├── ALLOW ──▶ Execute ──▶ attest_provenance()
+       │
+       ├── CLAMP ──▶ Execute with modified bounds ──▶ attest_provenance()
+       │
+       └── DENY  ──▶ Do NOT execute. Report to operator.
 ```
 
-9 tools, 2 resources, 2 prompts. Auto-provisions a free-tier key on first tool call if no API key is provided.
+## Discovery
 
-## Python SDK
+This service is discoverable via x402 Bazaar:
 
 ```bash
-pip install kevros
-# or
-uv pip install kevros
+# Find governance services
+npx awal@latest x402 bazaar search governance
+
+# Full discovery document
+curl https://governance.taskhawktech.com/.well-known/x402
 ```
 
-```python
-from kevros import GovernanceClient
+## Integration with AgentKit
 
-client = GovernanceClient(agent_id="your-agent-id")
-result = client.verify(action_type="api_call", action_payload={"endpoint": "/deploy"})
-print(result.decision)  # ALLOW, CLAMP, or DENY
+If using the full AgentKit SDK, install the ActionProvider instead:
+
+```bash
+pip install coinbase-agentkit-kevros  # Python
+npm install @kevros/agentkit          # TypeScript
 ```
 
-## Decision Approach
-
-When collaborating with another agent:
-
-1. **Trust score > 70%** — proceed with normal collaboration
-2. **Trust score 40-70%** — verify their actions before relying on results
-3. **Trust score < 40%** — require bound intents with outcome verification
-4. **No history** — start with small, low-risk interactions
-
-## Pricing
-
-- **Free tier:** 100 calls/month, instant signup, no payment required
-- **Scout:** $29/mo — 5,000 calls
-- **Sentinel:** $149/mo — 50,000 calls
-- **Sovereign:** $499/mo — 500,000 calls
-
-Upgrade at `https://governance.taskhawktech.com/upgrade`
+The ActionProvider wraps these same endpoints with the AgentKit action pattern.
