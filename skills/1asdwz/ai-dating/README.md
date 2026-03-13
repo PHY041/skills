@@ -95,9 +95,11 @@ dating-cli task create \
   --preferred-hobby-text "reading, travel" \
   --preferred-character-text "kind, positive" \
   --preferred-ability-text "strong communication" \
+  --intention "long-term relationship" \
   --hobby-embedding-min-score 0.72 \
   --character-embedding-min-score 0.70 \
   --ability-embedding-min-score 0.68 \
+  --intention-embedding-min-score 0.70 \
   --preferred-contact-channel telegram
 ```
 
@@ -147,7 +149,7 @@ Failure:
 Important `check` fields:
 
 - `response.data.watchStatus`: `MATCH_FOUND` or `NO_RESULT_RETRY_NOW`
-- `response.data.candidates[]`: candidate list (including `matchId`, `memberId`, `rankScore`, `compatibilityScore`, and more)
+- `response.data.candidates[]`: candidate list (score-related field keeps `rankScore` only)
 
 ## Recommended Practices
 

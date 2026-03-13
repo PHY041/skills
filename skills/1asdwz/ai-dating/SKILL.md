@@ -18,7 +18,7 @@ Trigger this skill when any of the following intents appear:
 
 ## Language Alignment Rule
 
-When constructing `dating-cli` command arguments, use the same language as the user for all free-text fields and labels (for example `--task-name`, `--character-text`, `--hobby-text`, `--ability-text`, `--preferred-*` text fields, and `--comment`).
+When constructing `dating-cli` command arguments, use the same language as the user for all free-text fields and labels (for example `--task-name`, `--character-text`, `--hobby-text`, `--ability-text`, `--intention`, `--preferred-*` text fields, and `--comment`).
 
 - Do not translate user-provided content unless the user explicitly requests translation.
 - Keep language style consistent across one command (for example, if the user speaks Chinese, prefer Chinese text values in string parameters).
@@ -50,7 +50,10 @@ dating-cli register --username "amy_2026"
 dating-cli login --username "amy_2026" --password "123456"
 ```
 
-4. Parse user self-description and update profile (full parameter example).
+> **Note:** The parameters for `profile update`, `task create`, and `task update` are optional..
+> For profile images, upload image files first using `POST /minio/upload`, then pass returned URLs with repeatable `--photo-url` (mapped to `/member-profile` field `photoUrls`).
+
+4. Parse user self-description and update profile (full parameter example), Users do not need to fill in all fields - only provide the information they have available.
 ```bash
 dating-cli profile update \
   --gender male \
@@ -70,19 +73,23 @@ dating-cli profile update \
   --current-latitude 30.27415 \
   --current-longitude 120.15515 \
   --current-location-text "Hangzhou West Lake" \
+  --photo-url "https://cdn.example.com/photos/amy-1.jpg" \
+  --photo-url "https://cdn.example.com/photos/amy-2.jpg" \
+  --email "amy@example.com" \
   --phone "13800000000" \
   --telegram "amy_tg" \
   --wechat "amy_wechat" \
+  --whatsapp "amy_wa" \
   --signal-chat "amy_signal" \
   --line "amy_line" \
   --snapchat "amy_snap" \
   --instagram "amy_ins" \
   --facebook "amy_fb" \
-  --other-contact "xiaohongshu=amy_xhs" \
+  --other-contact "x=amy_xhs" \
   --other-contact "discord=amy#1234"
 ```
 
-5. Parse partner preferences and create a match task (full parameter example).
+5. Parse partner preferences and create a match task (full parameter example), Users do not need to fill in all fields - only provide the information they have available.
 ```bash
 dating-cli task create \
   --task-name "Find partner in Hangzhou" \
@@ -98,9 +105,11 @@ dating-cli task create \
   --preferred-hobby-text "reading, travel" \
   --preferred-character-text "kind, positive" \
   --preferred-ability-text "strong communication" \
+  --intention "long-term relationship" \
   --hobby-embedding-min-score 0.72 \
   --character-embedding-min-score 0.70 \
   --ability-embedding-min-score 0.68 \
+  --intention-embedding-min-score 0.70 \
   --preferred-contact-channel telegram
 ```
 
@@ -115,9 +124,11 @@ dating-cli task update 12345 \
   --preferred-hobby-text "reading, travel, sports" \
   --preferred-character-text "independent, optimistic" \
   --preferred-ability-text "communication and collaboration" \
+  --intention "serious relationship with marriage plan" \
   --hobby-embedding-min-score 0.70 \
   --character-embedding-min-score 0.70 \
   --ability-embedding-min-score 0.65 \
+  --intention-embedding-min-score 0.68 \
   --preferred-contact-channel wechat
 ```
 
@@ -126,12 +137,15 @@ dating-cli task update 12345 \
 dating-cli task get 12345
 ```
 
-8. Execute `check` to inspect match results (full parameter example).
+8. Execute `check` to inspect match results (full parameter example, paginated).
 ```bash
-dating-cli check 12345 
+dating-cli check 12345 --page 1
 ```
-If the result is `NO_RESULT_RETRY_NOW`, call `check` again as needed (or schedule an external cron/job every 5 minutes).  
+Each page returns 10 candidates. Use `--page` to fetch subsequent pages when needed.
+If the result is `NO_RESULT_RETRY_NOW`, call `check` again as needed.  
 If the result is `MATCH_FOUND`, continue to contact reveal.
+Suggest users register email via `dating-cli profile update --email ...` so they can receive periodic match-growth reminders.
+
 
 9. Select the best candidate from match results and reveal contact details (full parameter example).
 ```bash

@@ -171,6 +171,8 @@ Input fields (profile and contacts):
 | --current-latitude | Number | No | Current latitude |
 | --current-longitude | Number | No | Current longitude |
 | --current-location-text | String | No | Current location text |
+| --photo-url | String | No | Profile image URL, repeatable; maps to `photoUrls` |
+| --email | String | No | Email used for match reminder notifications |
 | --phone | String | No | Phone number |
 | --telegram | String | No | Telegram |
 | --wechat | String | No | WeChat |
@@ -180,6 +182,11 @@ Input fields (profile and contacts):
 | --instagram | String | No | Instagram |
 | --facebook | String | No | Facebook |
 | --other-contact | String | No | `key=value`, repeatable; becomes `otherContacts` map |
+
+Image upload flow:
+
+- Upload image files first via `POST /minio/upload`.
+- Use repeatable `--photo-url` to submit returned URLs to `/member-profile`.
 
 Output fields:
 
@@ -218,9 +225,11 @@ Input fields (criteria):
 | --preferred-hobby-text | String | No | Preferred hobby text |
 | --preferred-character-text | String | No | Preferred personality text |
 | --preferred-ability-text | String | No | Preferred ability text |
+| --intention | String | No | Match intention text, e.g. long-term relationship |
 | --hobby-embedding-min-score | Number | No | Min hobby embedding score |
 | --character-embedding-min-score | Number | No | Min personality embedding score |
 | --ability-embedding-min-score | Number | No | Min ability embedding score |
+| --intention-embedding-min-score | Number | No | Min intention embedding score |
 | --preferred-contact-channel | String | No | Preferred channel: `phone/telegram/wechat/signal_chat/line/snapchat/instagram/facebook` |
 
 Output fields (top-level):
@@ -318,13 +327,14 @@ Output fields:
 
 ## 8. Match Check Command
 
-### 8.1 `dating-cli check <taskId> `
+### 8.1 `dating-cli check <taskId> [--page <value>]`
 
 Input fields:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | taskId | Integer | Yes | Task ID |
+| --page | Integer | No | Page number, default `1`; each page returns `10` candidates |
 
 Output fields (top-level):
 
@@ -343,7 +353,11 @@ Output fields (`response.data`):
 | serverTime | Long | Server timestamp in milliseconds |
 | taskId | Long | Current task ID |
 | resultVersion | Long | Current result version |
-| candidates | Array<Object> | Candidate list (up to 20) |
+| page | Integer | Current page number |
+| pageSize | Integer | Page size, fixed `10` |
+| total | Integer | Total candidate count in this check result |
+| totalPages | Integer | Total pages in this check result |
+| candidates | Array<Object> | Candidate list for current page (up to 10) |
 
 `candidates[]` (`MatchCandidateView`) fields:
 
@@ -360,22 +374,21 @@ Output fields (`response.data`):
 | hobbyText | String | Hobby text |
 | character | String | Personality text |
 | abilityText | String | Ability text |
+| photoUrls | Array<String> | Profile image URLs uploaded by the candidate |
 | currentLocationText | String | Location text |
 | currentLatitude | BigDecimal | Latitude |
 | currentLongitude | BigDecimal | Longitude |
-| rankScore | Double | Rank score |
-| compatibilityScore | Double | Compatibility score |
-| hobbyEmbeddingScore | Double | Hobby embedding score |
-| characterEmbeddingScore | Double | Personality embedding score |
-| abilityEmbeddingScore | Double | Ability embedding score |
-| vectorSimilarityScore | Double | Combined vector score |
+| rankScore | Double | Total score returned by `/check` |
 | exactMatchCount | Integer | Exact matched condition count |
 | exactConditionCount | Integer | Total exact condition count |
-| exactMatchScore | Double | Exact-match score |
-| avgRating | Double | Historical average rating |
 | confirmedViolationCount | Integer | Confirmed violation count |
 | dailyExposureCount | Integer | Daily exposure count |
 | profileUpdatedAt | DateTime | Profile last updated time |
+
+Reminder rule:
+
+- The backend checks active tasks every 10 minutes.
+- If current candidate count is at least 2x compared with the previous check baseline, an email reminder is sent to the task owner (when email is configured).
 
 ## 9. Result Commands
 
@@ -448,13 +461,13 @@ dating-cli register --username <preferredName>
 dating-cli login --username <u> --password <p>
 
 # 2) Update profile
-dating-cli profile update --gender male --city Shanghai --character-text "<text>" --hobby-text "<text>" --ability-text "<text>"
+dating-cli profile update --gender male --city Shanghai --character-text "<text>" --hobby-text "<text>" --ability-text "<text>" --photo-url "<url1>" --photo-url "<url2>"
 
 # 3) Create task
-dating-cli task create --task-name "<name>" --preferred-gender-filter '{"eq":"female"}' --preferred-height-filter '{"gte":165}' --preferred-city-filter '{"eq":"Shanghai"}'
+dating-cli task create --task-name "<name>" --preferred-gender-filter '{"eq":"female"}' --preferred-height-filter '{"gte":165}' --preferred-city-filter '{"eq":"Shanghai"}' --intention "long-term relationship" --intention-embedding-min-score 0.70
 
 # 4) Check match results (repeat when NO_RESULT_RETRY_NOW)
-dating-cli check <taskId> 
+dating-cli check <taskId> --page 1
 
 # 5) Reveal contact after match
 dating-cli reveal-contact <matchId>
@@ -466,5 +479,5 @@ dating-cli review <matchId> --rating 5 --comment "Smooth communication"
 If criteria need to be adjusted and matching should continue:
 
 ```bash
-dating-cli task update <taskId> --task-name "<name>" --preferred-gender-filter '{"eq":"female"}' --preferred-city-filter '{"eq":"Hangzhou"}'
+dating-cli task update <taskId> --task-name "<name>" --preferred-gender-filter '{"eq":"female"}' --preferred-city-filter '{"eq":"Hangzhou"}' --intention "serious relationship"
 ```
