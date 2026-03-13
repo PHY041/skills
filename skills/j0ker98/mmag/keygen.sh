@@ -23,6 +23,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "❌ Missing required binary: openssl" >&2
+  exit 1
+fi
+
 if [ -f "$KEY_FILE" ]; then
   echo "⚠️  Key file already exists: $KEY_FILE"
   read -rp "   Overwrite? [y/N] " confirm </dev/tty
@@ -36,6 +41,7 @@ fi
 mkdir -p "$(dirname "$KEY_FILE")"
 
 # Generate a 32-byte (256-bit) random key, base64-encoded
+umask 077
 openssl rand -base64 32 > "$KEY_FILE"
 chmod 600 "$KEY_FILE"
 
@@ -49,4 +55,4 @@ echo "Next steps:"
 echo "  Encrypt long-term layer:  bash skill/encrypt.sh --layer long-term"
 echo "  Decrypt when needed:      bash skill/decrypt.sh --layer long-term"
 echo ""
-echo "  Or set the key inline (no file):  export MMAG_KEY=\$(cat $KEY_FILE)"
+echo "  For automation, prefer key file mode: export MMAG_KEY_FILE=\"$KEY_FILE\""

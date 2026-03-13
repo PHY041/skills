@@ -26,20 +26,25 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "❌ Missing required binary: openssl" >&2
+  exit 1
+fi
+
 # ── Key resolution ─────────────────────────────────────────────────────────────
 resolve_key() {
   if [ -n "${MMAG_KEY:-}" ]; then
-    echo "$MMAG_KEY"
+    printf "%s" "$MMAG_KEY"
     return
   fi
   if [ -f "$KEY_FILE" ]; then
-    cat "$KEY_FILE"
+    tr -d '\r\n' < "$KEY_FILE"
     return
   fi
   # Interactive prompt (written to stderr so it doesn't pollute output)
   read -rsp "🔑 MMAG passphrase: " PASSPHRASE </dev/tty >&2
   echo "" >&2
-  echo "$PASSPHRASE"
+  printf "%s" "$PASSPHRASE"
 }
 
 # ── Encrypt a single file ──────────────────────────────────────────────────────
@@ -49,7 +54,7 @@ encrypt_file() {
   local dst="${src%.md}.md.enc"
 
   # Use stdin for password to avoid exposure in process listings
-  echo "$key" | openssl enc -aes-256-cbc -pbkdf2 -iter 100000 \
+  printf "%s" "$key" | openssl enc -aes-256-cbc -pbkdf2 -iter 100000 \
     -pass stdin \
     -in  "$src" \
     -out "$dst" 2>/dev/null
@@ -65,6 +70,10 @@ encrypt_file() {
 }
 
 # ── Main ───────────────────────────────────────────────────────────────────────
+if [ -n "${MMAG_KEY:-}" ]; then
+  echo "⚠️  MMAG_KEY environment mode is active; prefer MMAG_KEY_FILE to reduce exposure." >&2
+fi
+
 KEY=$(resolve_key)
 
 if [ -n "$TARGET_FILE" ]; then

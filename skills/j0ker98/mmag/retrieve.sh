@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 # retrieve.sh – Search memories from one or all MMAG layers
-# Usage: bash retrieve.sh <layer|all> [query] [--root <memory-root>]
+# Usage: bash retrieve.sh <layer|all> [query] [--root <memory-root>] [--no-redact]
 #
 # Layers: conversational | long-term | episodic | sensory | working | all
 #
 # Encrypted files (.md.enc) are transparently decrypted via decrypt.sh --stdout.
 # Set MMAG_KEY or MMAG_KEY_FILE before searching encrypted layers.
+# Secret-like patterns are redacted by default. Pass --no-redact to disable.
 
 set -euo pipefail
 
 ROOT="memory"
 LAYER=""
 QUERY=""
+REDACT=true
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --root)
       ROOT="$2"
       shift 2
+      ;;
+    --no-redact)
+      REDACT=false
+      shift
       ;;
     *)
       if [ -z "$LAYER" ]; then
@@ -38,6 +44,12 @@ if [ -z "$LAYER" ]; then
 fi
 
 VALID_LAYERS=("conversational" "long-term" "episodic" "sensory" "working")
+
+redact_secrets() {
+  sed -E \
+    -e 's/(sk-[A-Za-z0-9_-]{16,})/[REDACTED_KEY]/g' \
+    -e 's/((api|access|secret|private)[_-]?(key|token|password)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1[REDACTED]/Ig'
+}
 
 search_layer() {
   local layer="$1"
@@ -70,6 +82,10 @@ search_layer() {
     else
       content=$(cat "$f")
       label="📄 $f"
+    fi
+
+    if $REDACT; then
+      content=$(printf "%s" "$content" | redact_secrets)
     fi
 
     if [ -z "$QUERY" ]; then

@@ -81,6 +81,17 @@ case "$LAYER" in
     ;;
 esac
 
+# Basic security check for prompt injection
+INJECTION_KEYWORDS=("ignore all previous" "system prompt" "new instructions" "user: admin" "developer mode")
+CONTENT_LOWER=$(echo "$CONTENT" | tr '[:upper:]' '[:lower:]')
+for kw in "${INJECTION_KEYWORDS[@]}"; do
+  if [[ "$CONTENT_LOWER" == *"$kw"* ]]; then
+    echo "⚠️  WARNING: Potential prompt injection detected in content ('$kw')." >&2
+    echo "   This entry will be stored but may be ignored or flagged by the agent." >&2
+    break
+  fi
+done
+
 # Write the entry
 {
   if [ ! -f "$TARGET_FILE" ]; then
