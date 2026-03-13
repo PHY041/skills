@@ -3,11 +3,16 @@
   "slug": "adspower-browser",
   "displayName": "adspower-browser",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1773112760584,
-    "commit": "https://github.com/openclaw/skills/commit/4fd557ffecb5c38c639e6e5f627e57ac01019c24"
+    "version": "1.0.9",
+    "publishedAt": 1773384029680,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1773112760584,
+      "commit": "https://github.com/openclaw/skills/commit/4fd557ffecb5c38c639e6e5f627e57ac01019c24"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1772779269076,
