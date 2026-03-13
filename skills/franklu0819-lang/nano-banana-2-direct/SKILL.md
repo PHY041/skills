@@ -1,6 +1,23 @@
 ---
-name: nano-banana-2-direct-direct
+name: nano-banana-2-direct
 description: Generate/edit images with Gemini 3.1 Flash Image Preview (Nano Banana 2). Direct API call without inference.sh dependency. Use for image create/modify requests incl. edits. Supports text-to-image + image-to-image; 1K/2K/4K; use --input-image.
+version: 1.0.1
+metadata:
+  {
+    "openclaw":
+      {
+        "requires": { "bins": ["uv"], "env": ["GEMINI_API_KEY"] },
+        "install":
+          [
+            {
+              "id": "python-deps",
+              "kind": "exec",
+              "command": "uv pip install google-genai pillow",
+              "label": "Install Python dependencies",
+            },
+          ],
+      },
+  }
 ---
 
 # Nano Banana 2 Direct - Gemini 3.1 Flash Image
