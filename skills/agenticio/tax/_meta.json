@@ -3,11 +3,16 @@
   "slug": "tax",
   "displayName": "Tax",
   "latest": {
-    "version": "2.1.0",
-    "publishedAt": 1773065739758,
-    "commit": "https://github.com/openclaw/skills/commit/2762cbe2572a06674b56349303ee1087824424df"
+    "version": "4.0.0",
+    "publishedAt": 1773239727138,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.1.0",
+      "publishedAt": 1773065739758,
+      "commit": "https://github.com/openclaw/skills/commit/2762cbe2572a06674b56349303ee1087824424df"
+    },
     {
       "version": "2.0.0",
       "publishedAt": 1772975474776,
