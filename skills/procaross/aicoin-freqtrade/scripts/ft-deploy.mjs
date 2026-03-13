@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Freqtrade One-Click Deployment via git clone + setup.sh (official method)
 // Reads exchange keys from .env, creates config, starts as background process
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -332,6 +332,11 @@ const actions = {
 
     // 9. Start freqtrade as background process (with proxy env vars)
     const strategy = params.strategy || 'SampleStrategy';
+    // Validate strategy exists
+    const stratFile = resolve(STRAT_DIR, `${strategy}.py`);
+    if (strategy !== 'SampleStrategy' && !existsSync(stratFile)) {
+      throw new Error(`Strategy "${strategy}" not found at ${stratFile}. Use strategy_list to see available strategies, or create_strategy to create one.`);
+    }
     const proxyEnv = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
     const proxyPrefix = proxyEnv ? `env HTTPS_PROXY=${proxyEnv} HTTP_PROXY=${proxyEnv} ` : '';
     run(`nohup ${proxyPrefix}${FT_BIN} trade --config ${CONFIG_PATH} --strategy ${strategy} --userdir ${USER_DATA} > ${LOG_FILE} 2>&1 & echo $! > ${PID_FILE}`);
@@ -428,9 +433,18 @@ const actions = {
     if (!existsSync(FT_BIN)) throw new Error('Freqtrade not installed. Run deploy first.');
     if (!existsSync(CONFIG_PATH)) throw new Error('No config found. Run deploy first.');
     const strategy = params.strategy || 'SampleStrategy';
+    // Validate strategy exists
+    const stratFile = resolve(STRAT_DIR, `${strategy}.py`);
+    if (!existsSync(stratFile)) {
+      throw new Error(`Strategy "${strategy}" not found at ${stratFile}. Use strategy_list to see available strategies, or create_strategy to create one.`);
+    }
     const timeframe = params.timeframe || '1h';
     const timerange = params.timerange || '';
     const timerangeArg = timerange ? ` --timerange ${timerange}` : '';
+    const pairs = params.pairs; // e.g. ["ETH/USDT:USDT"] or "ETH/USDT:USDT"
+    const pairsArg = pairs
+      ? ` -p ${(Array.isArray(pairs) ? pairs : [pairs]).join(' ')}`
+      : '';
 
     const proxyEnv = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
     const proxyPrefix = proxyEnv ? `env HTTPS_PROXY=${proxyEnv} HTTP_PROXY=${proxyEnv} ` : '';
@@ -439,7 +453,7 @@ const actions = {
     console.error('Downloading historical data...');
     try {
       run(
-        `${proxyPrefix}${FT_BIN} download-data --config ${CONFIG_PATH} --timeframe ${timeframe}${timerangeArg} --userdir ${USER_DATA}`,
+        `${proxyPrefix}${FT_BIN} download-data --config ${CONFIG_PATH} --timeframe ${timeframe}${timerangeArg}${pairsArg} --userdir ${USER_DATA}`,
         { timeout: 300000 }
       );
     } catch (e) {
@@ -448,10 +462,17 @@ const actions = {
 
     // Run backtest
     console.error(`Running backtest: strategy=${strategy}, timeframe=${timeframe}${timerange ? `, timerange=${timerange}` : ''}...`);
-    const output = run(
-      `${proxyPrefix}${FT_BIN} backtesting --config ${CONFIG_PATH} --strategy ${strategy} --timeframe ${timeframe}${timerangeArg} --userdir ${USER_DATA}`,
+    const rawOutput = run(
+      `${proxyPrefix}${FT_BIN} backtesting --config ${CONFIG_PATH} --strategy ${strategy} --timeframe ${timeframe}${timerangeArg}${pairsArg} --userdir ${USER_DATA}`,
       { timeout: 600000 }
     );
+    // Filter: keep only result lines, strip proxy/internal addresses
+    const output = rawOutput
+      .split('\n')
+      .filter(l => !l.includes('INFO') || l.includes('TOTAL') || l.includes('Result') || l.includes('trades') || l.includes('Profit') || l.includes('Drawdown') || l.includes('Win') || l.includes('Avg'))
+      .join('\n')
+      .replace(/\b127\.0\.0\.1:\d+\b/g, '[local]')
+      .replace(/https?:\/\/\d+\.\d+\.\d+\.\d+:\d+/g, '[proxy]');
     return { strategy, timeframe, timerange: timerange || 'all available', output };
   },
 
@@ -478,6 +499,11 @@ const actions = {
     if (!existsSync(CONFIG_PATH)) throw new Error('No config found. Run deploy first.');
 
     const strategy = params.strategy || 'SampleStrategy';
+    // Validate strategy exists
+    const hStratFile = resolve(STRAT_DIR, `${strategy}.py`);
+    if (!existsSync(hStratFile)) {
+      throw new Error(`Strategy "${strategy}" not found at ${hStratFile}. Use strategy_list to see available strategies, or create_strategy to create one.`);
+    }
     const timeframe = params.timeframe || '1h';
     const timerange = params.timerange || '';
     const epochs = Math.min(Number(params.epochs) || 100, 500);
@@ -510,8 +536,11 @@ const actions = {
   },
 
   create_strategy: async (params = {}) => {
-    const name = params.name;
+    let name = params.name;
     if (!name) throw new Error('name is required. Example: {"name":"MyStrategy","timeframe":"15m","indicators":["rsi","macd","bb"],"aicoin_data":["funding_rate","ls_ratio"]}');
+    // Auto-fix common naming issues from weak models
+    name = name.replace(/[^A-Za-z0-9_]/g, '');  // strip invalid chars
+    if (name && /^[a-z]/.test(name)) name = name[0].toUpperCase() + name.slice(1);  // auto-capitalize
     if (!/^[A-Z][A-Za-z0-9_]+$/.test(name)) throw new Error('name must be a valid Python class name starting with uppercase (e.g. MyStrategy)');
 
     mkdirSync(STRAT_DIR, { recursive: true });
@@ -582,6 +611,31 @@ const actions = {
     if (pid) { try { process.kill(pid, 'SIGTERM'); } catch {} }
     try { writeFileSync(PID_FILE, ''); } catch {}
     return { removed: true, note: `Process stopped. Config preserved at ${FT_DIR}. To fully remove: rm -rf ${FT_DIR}` };
+  },
+
+  backtest_results: async () => {
+    const resultsDir = resolve(USER_DATA, 'backtest_results');
+    if (!existsSync(resultsDir)) return { results: [], path: resultsDir };
+    const files = readdirSync(resultsDir)
+      .filter(f => f.endsWith('.meta.json'))
+      .map(f => {
+        try {
+          const meta = JSON.parse(readFileSync(resolve(resultsDir, f), 'utf8'));
+          const strategy = Object.keys(meta)[0] || 'unknown';
+          const info = meta[strategy] || {};
+          return {
+            file: f.replace('.meta.json', ''),
+            strategy,
+            timeframe: info.timeframe || '',
+            start: info.backtest_start_ts ? new Date(info.backtest_start_ts * 1000).toISOString().slice(0, 10) : '',
+            end: info.backtest_end_ts ? new Date(info.backtest_end_ts * 1000).toISOString().slice(0, 10) : '',
+          };
+        } catch { return null; }
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.file.localeCompare(a.file))
+      .slice(0, 10);
+    return { results: files, path: resultsDir };
   },
 };
 

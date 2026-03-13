@@ -3,11 +3,16 @@
   "slug": "aicoin-freqtrade",
   "displayName": "Aicoin Freqtrade",
   "latest": {
-    "version": "3.4.5",
-    "publishedAt": 1773156687686,
-    "commit": "https://github.com/openclaw/skills/commit/2b6839b416e6eef88d03bf8b7e38b11b254abd33"
+    "version": "3.5.3",
+    "publishedAt": 1773170371702,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.4.5",
+      "publishedAt": 1773156687686,
+      "commit": "https://github.com/openclaw/skills/commit/2b6839b416e6eef88d03bf8b7e38b11b254abd33"
+    },
     {
       "version": "3.0.9",
       "publishedAt": 1772795601217,

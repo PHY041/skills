@@ -4,7 +4,7 @@ description: "Use when user asks about writing trading strategies, backtesting, 
 metadata: { "openclaw": { "primaryEnv": "AICOIN_ACCESS_KEY_ID", "requires": { "bins": ["node"] }, "homepage": "https://www.aicoin.com/opendata", "source": "https://github.com/aicoincom/coinos-skills", "license": "MIT" } }
 ---
 
-> **⚠️ 运行脚本: 所有 `node scripts/...` 命令必须以本 SKILL.md 所在目录为 workdir。**
+> **⚠️ 运行脚本: 必须先 cd 到本 SKILL.md 所在目录再执行。示例: `cd ~/.openclaw/workspace/skills/aicoin-freqtrade && node scripts/ft-deploy.mjs ...`**
 
 # AiCoin Freqtrade
 
@@ -15,8 +15,9 @@ Freqtrade strategy creation, backtesting, and deployment powered by [AiCoin Open
 1. **ALWAYS use `ft-deploy.mjs backtest`** for backtesting. NEVER write custom backtest scripts. NEVER use simulated/fabricated data.
 2. **ALWAYS use `ft-deploy.mjs deploy`** for deployment. NEVER use Docker. NEVER manually run `freqtrade` commands.
 3. **NEVER manually edit Freqtrade config files.** Use `ft-deploy.mjs` actions.
-4. **NEVER manually run `freqtrade trade`, `source .venv/bin/activate`, or `pip install freqtrade`.**
+4. **NEVER manually run `freqtrade trade`, `freqtrade status`, `freqtrade backtesting`, `source .venv/bin/activate`, or `pip install freqtrade`.** Always use ft-deploy.mjs or ft.mjs instead.
 5. **ACTIVELY use AiCoin data** in strategies. Check what data the user's API key supports and integrate it. Don't only use basic indicators when richer data is available.
+6. **Freqtrade 不支持网格策略(grid)。** 用户问网格时，说明限制并建议用趋势跟踪或区间策略替代。
 
 ## Two Ways to Create Strategies
 
@@ -248,7 +249,7 @@ Always explain this to the user when showing backtest results.
 | Task | Command |
 |------|---------|
 | Quick-generate strategy | `node scripts/ft-deploy.mjs create_strategy '{"name":"MyStrat","timeframe":"15m","indicators":["rsi","macd"],"aicoin_data":["funding_rate"]}'` |
-| Backtest | `node scripts/ft-deploy.mjs backtest '{"strategy":"MyStrat","timeframe":"1h","timerange":"20250101-20260301"}'` |
+| Backtest | `node scripts/ft-deploy.mjs backtest '{"strategy":"MyStrat","timeframe":"1h","timerange":"20250101-20260301","pairs":["ETH/USDT:USDT"]}'` |
 | Deploy (dry-run) | `node scripts/ft-deploy.mjs deploy '{"strategy":"MyStrat","pairs":["BTC/USDT:USDT"]}'` |
 | Deploy (live) | `node scripts/ft-deploy.mjs deploy '{"strategy":"MyStrat","dry_run":false,"pairs":["BTC/USDT:USDT"]}'` |
 | Hyperopt | `node scripts/ft-deploy.mjs hyperopt '{"strategy":"MyStrat","timeframe":"1h","timerange":"20250101-20260301","epochs":100}'` |
@@ -283,10 +284,11 @@ Get at https://www.aicoin.com/opendata
 |--------|--------|
 | `check` | None |
 | `deploy` | `{"strategy":"MACDKDJStrategy","dry_run":true,"pairs":["BTC/USDT:USDT"]}` — **strategy 必填，指定策略名** |
-| `backtest` | `{"strategy":"Name","timeframe":"1h","timerange":"20250101-20260301"}` |
+| `backtest` | `{"strategy":"Name","timeframe":"1h","timerange":"20250101-20260301","pairs":["ETH/USDT:USDT"]}` — pairs 可选，默认用 config 中的交易对 |
 | `hyperopt` | `{"strategy":"Name","timeframe":"1h","epochs":100}` |
 | `create_strategy` | `{"name":"Name","timeframe":"15m","indicators":["rsi","macd"],"aicoin_data":["funding_rate"]}` |
 | `strategy_list` | None |
+| `backtest_results` | None — lists recent backtest result files |
 | `start` / `stop` / `status` / `logs` | None / `{"lines":50}` |
 
 ### ft.mjs — Bot Control (requires running process)
