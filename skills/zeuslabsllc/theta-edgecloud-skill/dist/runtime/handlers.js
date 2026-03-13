@@ -243,7 +243,7 @@ const commandRegistry = {
                 'Go to Account -> Projects and select your project.',
                 'Click Create API Key and copy the project API key.',
                 'Set THETA_EC_API_KEY and THETA_EC_PROJECT_ID in OpenClaw.',
-                'Optional: for on-demand image/video infer, create On-demand API key/token and set THETA_ONDEMAND_API_KEY (or THETA_ONDEMAND_API_TOKEN).',
+                'Recommended: for on-demand image/video infer, create On-demand API key/token and set THETA_ONDEMAND_API_KEY (or THETA_ONDEMAND_API_TOKEN).',
                 'Run theta.auth.capabilities to verify configured command families.'
             ],
             env: {
@@ -363,8 +363,14 @@ const commandRegistry = {
         handler: (cfg, args) => deployments.listChatbots(cfg, resolveProjectId(cfg, args))
     },
     'theta.video.list': {
-        schema: { command: 'theta.video.list', description: 'List videos for service account', required: ['serviceAccountId'] },
-        handler: (cfg, args) => video.videoList(cfg, requireIdentifier(args.serviceAccountId, 'serviceAccountId', 'INVALID_SERVICE_ACCOUNT_ID'), args.page === undefined ? 1 : requirePositiveInt(args.page, 'page', 'INVALID_PAGE'), args.number === undefined ? 10 : requirePositiveInt(args.number, 'number', 'INVALID_PAGE_SIZE'))
+        schema: { command: 'theta.video.list', description: 'List videos for service account (defaults to THETA_VIDEO_SA_ID when omitted)', required: [] },
+        handler: (cfg, args) => {
+            const serviceAccountId = args.serviceAccountId ?? cfg.videoSaId;
+            if (!serviceAccountId) {
+                throw fromConfigError('serviceAccountId missing. Pass args.serviceAccountId or set THETA_VIDEO_SA_ID.', 'MISSING_THETA_VIDEO_SA_ID');
+            }
+            return video.videoList(cfg, requireIdentifier(serviceAccountId, 'serviceAccountId', 'INVALID_SERVICE_ACCOUNT_ID'), args.page === undefined ? 1 : requirePositiveInt(args.page, 'page', 'INVALID_PAGE'), args.number === undefined ? 10 : requirePositiveInt(args.number, 'number', 'INVALID_PAGE_SIZE'));
+        }
     },
     'theta.video.uploadCreate': {
         schema: { command: 'theta.video.uploadCreate', description: 'Create Theta Video upload session', required: [] },

@@ -2,10 +2,14 @@
 
 This is a dist-only runtime artifact for ClawHub scanning/install path validation.
 
-## Known temporary limitation (2026-03-07)
-- Dedicated inference endpoint commands are **temporarily considered experimental/platform-blocked** until Theta confirms an upstream fix.
-- Live validation showed repeated authenticated `502/503` on `/v1/models` and `/v1/chat/completions` even when dashboard/controller reported deployment as `Running`/`1/1`.
-- Non-dedicated command families (controller/deployments/on-demand/video/listing flows) remain available.
+## Dedicated inference status (revalidated 2026-03-11)
+- Dedicated inference endpoint commands are **working again after Developer Plan / quota upgrade**, with one important caveat: readiness is not immediate.
+- Successful live validation showed this warm-up pattern on a fresh disposable deployment:
+  - authenticated `/v1/models` returned transient `404` once
+  - then transient `502` twice
+  - then `/v1/models` succeeded
+  - then authenticated `/v1/chat/completions` succeeded
+- Non-dedicated command families remain available and are still the simplest daily default for many tasks.
 
 ## Scope
 - Cloud API operations only (`deployment`, `inference`, `video`, `on-demand`).
@@ -46,6 +50,11 @@ Most features require a funded Theta EdgeCloud account (credits/billing).
 - **Video API:**
   - `THETA_VIDEO_SA_ID`
   - `THETA_VIDEO_SA_SECRET`
+  - `theta.video.list` will default to `THETA_VIDEO_SA_ID` if `serviceAccountId` is omitted
+- **Dedicated GPU deployments / serving endpoints:**
+  - check **Account -> Quota** and use **Increase Quota** when default GPU quotas are too low/zero
+  - current live operator guidance: add at least **$20** in credits first so the organization can reach **Developer Plan**, then retry quota increase for fuller functionality
+  - higher quota tiers may still exist beyond Developer Plan
 
 ### 2) Safer first-run profile
 
@@ -74,17 +83,18 @@ Then validate read/list endpoints before mutating calls.
   - verify key/token belongs to the intended project/account
   - verify permission scope and key is not revoked
 
-## Dedicated endpoint upstream readiness (502/503)
+## Dedicated endpoint readiness (404/502 warm-up)
 
-If inference calls return `THETA_DEDICATED_ENDPOINT_UPSTREAM_UNREADY` (or repeated HTTP `502/503`):
+If inference calls return `THETA_DEDICATED_ENDPOINT_UPSTREAM_UNREADY` (or early HTTP `404/502`) right after deployment creation:
 
-- This typically means auth is accepted at the edge, but the upstream model service is not yet reachable/healthy.
-- Symptom pattern seen in live tests:
-  - unauthenticated `/v1/models` -> `401`
-  - authenticated `/v1/models` and `/v1/chat/completions` -> `502/503`
-  - dashboard may still show deployment `Running` / `1/1`
-
-This points to platform-side ingress/backend readiness mismatch rather than incorrect client credentials.
+- This can mean auth is accepted at the edge, but the model service is still warming up.
+- Successful post-upgrade live retest showed this sequence on a fresh deployment:
+  - authenticated `/v1/models` -> transient `404`
+  - authenticated `/v1/models` -> transient `502`
+  - authenticated `/v1/models` -> success after warm-up
+  - authenticated `/v1/chat/completions` -> success
+- Treat the first ~1-2 minutes as a readiness window before declaring failure.
+- If failures persist beyond warm-up retries, then investigate auth, quota, allocator capacity, or true upstream health.
 
 ## Notes on third-party token mechanisms
 
@@ -131,7 +141,8 @@ This route can serve as the primary paid execution backend for OpenClaw:
 
 Operational recommendation:
 - Use on-demand + video + controller flows as production-default.
-- Keep dedicated endpoint chat/models as experimental until Theta confirms upstream readiness fix.
+- Current validated daily-use routes include `FLUX` image generation, `step_video` on-demand video generation, and dedicated OpenAI-compatible inference after readiness warm-up.
+- Dedicated endpoint chat/models are no longer treated as platform-blocked, but they should use authenticated readiness retries instead of immediate fail-fast assumptions on a fresh deployment.
 
 ## Tested auth comparison
 Validated in isolated external environment:
@@ -156,6 +167,11 @@ Infer requests are sent using the expected on-demand envelope shape: `{ input: .
   - `source: "catalog"`
   - `fallbackReason`
   - `warning`
+
+## step_video timeout behavior
+- `step_video` submit timeout is automatically raised above the generic HTTP default.
+- `step_video` poll/completion timeout auto-scales from request size when Theta status includes frame/fps metadata.
+- Timeout sizing rounds up and includes extra variance buffer for queueing/hardware load, to reduce false local timeouts on longer video jobs.
 
 
 ## Credentials are command-scoped

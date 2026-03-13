@@ -3,11 +3,16 @@
   "slug": "theta-edgecloud-skill",
   "displayName": "Theta EdgeCloud Skill",
   "latest": {
-    "version": "0.1.19",
-    "publishedAt": 1773259656899,
-    "commit": "https://github.com/openclaw/skills/commit/d6d4489a8491c2ebe91288ae2ed31643569bbaef"
+    "version": "0.1.20",
+    "publishedAt": 1773293004534,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.19",
+      "publishedAt": 1773259656899,
+      "commit": "https://github.com/openclaw/skills/commit/d6d4489a8491c2ebe91288ae2ed31643569bbaef"
+    },
     {
       "version": "0.1.18",
       "publishedAt": 1772907855042,

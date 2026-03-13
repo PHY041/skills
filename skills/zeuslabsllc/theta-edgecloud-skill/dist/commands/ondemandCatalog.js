@@ -1,4 +1,4 @@
-// Captured from live account testing on 2026-02-19.
+// Reference fallback catalog for when live on-demand service discovery is unavailable.
 export const ONDEMAND_SERVICE_CATALOG = {
     flux: {
         slug: 'flux',
@@ -64,6 +64,36 @@ export const ONDEMAND_SERVICE_CATALOG = {
         supportsInputPresignedUrls: false,
         observedUnitPriceUsd: '0.20 / video',
         notes: 'Often asynchronous and long-running.'
+    },
+    stable_viton: {
+        slug: 'stable_viton',
+        category: 'VirtualTryOn',
+        requiredInputFields: ['input_img', 'cloth_img'],
+        supportsInputPresignedUrls: true
+    },
+    stable_diffusion_turbo_vision: {
+        slug: 'stable_diffusion_turbo_vision',
+        category: 'ImageGen',
+        requiredInputFields: ['prompt'],
+        supportsInputPresignedUrls: false
+    },
+    stable_diffusion_xl_lightning: {
+        slug: 'stable_diffusion_xl_lightning',
+        category: 'ImageGen',
+        requiredInputFields: ['prompt'],
+        supportsInputPresignedUrls: false
+    },
+    stable_diffusion_xl_turbo: {
+        slug: 'stable_diffusion_xl_turbo',
+        category: 'ImageGen',
+        requiredInputFields: ['prompt'],
+        supportsInputPresignedUrls: false
+    },
+    llama_3_8b: {
+        slug: 'llama_3_8b',
+        category: 'LLM',
+        requiredInputFields: ['messages'],
+        supportsInputPresignedUrls: false
     },
     llama_3_1_70b: {
         slug: 'llama_3_1_70b',

@@ -13,10 +13,16 @@ metadata:
 
 # Theta EdgeCloud Skill (Cloud API Runtime)
 
-## Known temporary limitation (2026-03-07)
-- **Dedicated inference endpoint (`theta.inference.models`, `theta.inference.chat`) is currently treated as experimental/platform-blocked** due to upstream readiness instability observed in live validation.
-- Observed pattern: deployment appears `Running`/`1/1`, but authenticated endpoint calls can still return persistent `502/503`.
-- Until Theta confirms a platform fix, use these commands as best-effort diagnostics (not production readiness signals).
+## Dedicated inference status (revalidated 2026-03-11)
+- **Dedicated OpenAI-compatible inference (`theta.inference.models`, `theta.inference.chat`) was revalidated successfully after Developer Plan / quota upgrade.**
+- Important readiness nuance: endpoint creation is not instantly probe-ready.
+- Observed post-upgrade warm-up pattern during successful live validation:
+  - early authenticated `GET /v1/models` returned transient `404`, then transient `502`, then succeeded
+  - authenticated `POST /v1/chat/completions` succeeded after warm-up
+- Operational guidance:
+  - use authenticated readiness retries for ~1-2 minutes before declaring dedicated endpoint failure
+  - prefer `vm_gt1` first when allocator capacity is available
+  - if `vm_gt1` is capacity-blocked, fall back to `vm_gt2` or V100-backed options
 
 ## Credential scope model (important)
 This skill is command-scoped: only provide the credentials needed for the command family you use.
@@ -35,8 +41,12 @@ Credentials above are not globally required all at once.
 4) Provide these on install/setup prompt:
    - `THETA_EC_API_KEY`
    - `THETA_EC_PROJECT_ID`
-5) (Optional for on-demand image/video generation) create On-demand API key/token and set:
+5) (Recommended for on-demand image/video generation) create On-demand API key/token and set:
    - `THETA_ONDEMAND_API_KEY` (or `THETA_ONDEMAND_API_TOKEN`)
+6) For dedicated deployments / GPU-backed serving, check **Account -> Quota** and click **Increase Quota** if needed.
+   - Default machine-type quotas may be too low (or zero) for dedicated GPU deployment creation.
+   - Current live operator guidance: add at least **$20** in credits first so the organization can reach **Developer Plan**, then retry **Increase Quota** for fuller functionality.
+   - Higher quota tiers may still exist beyond Developer Plan.
 
 If a command says a key is missing, run `theta.auth.capabilities` to see exactly what to configure.
 
@@ -127,7 +137,8 @@ If Theta is the only paid AI backend, this skill can still cover most OpenClaw e
 
 Recommended reliability route:
 - Prefer on-demand + video/controller flows for production automation.
-- Keep dedicated endpoint commands (`theta.inference.models`, `theta.inference.chat`) as experimental until platform remediation is confirmed.
+- Current validated daily-use routes include `flux` image generation, `step_video` on-demand video generation, and dedicated OpenAI-compatible inference after readiness warm-up.
+- Dedicated endpoint commands are now valid when the project has quota/plan support, but should use authenticated readiness retries instead of immediate fail-fast assumptions.
 
 ## Organization & Project scope
 - Theta dashboard uses Organization + Project context.
@@ -148,6 +159,10 @@ The runtime accepts either `THETA_ONDEMAND_API_TOKEN` or `THETA_ONDEMAND_API_KEY
 ## Reliability behavior
 - `theta.ai.dedicatedDeployments.list` now emits warning metadata if serving-template catalog calls fail; this avoids silent empty output.
 - `theta.ondemand.listServices` returns service entries tagged by source (`live` or `catalog`) and includes fallback reason/warning fields when live discovery is unavailable.
+- `step_video` now uses service-aware timeout behavior:
+  - submit timeout is automatically raised above generic HTTP defaults
+  - poll/completion timeout auto-scales from requested video size when the request status exposes frame/fps metadata
+  - sizing rounds up with extra variance buffer to reduce false local timeouts under load
 
 
 ## Auth diagnostics

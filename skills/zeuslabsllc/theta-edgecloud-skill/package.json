@@ -1,6 +1,6 @@
 {
   "name": "theta-edgecloud-skill",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "private": true,
   "description": "Wirework scaffold for Theta EdgeCloud integration",
   "type": "module",

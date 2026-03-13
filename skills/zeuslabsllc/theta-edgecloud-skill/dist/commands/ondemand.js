@@ -14,6 +14,35 @@ function getFirstInferRequest(payload) {
 function isTerminal(state) {
     return state === 'success' || state === 'error' || state === 'failed' || state === 'cancelled';
 }
+function roundUpMs(value, bucketMs) {
+    return Math.ceil(value / bucketMs) * bucketMs;
+}
+function readPositiveInt(value) {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed <= 0)
+        return undefined;
+    return parsed;
+}
+function resolveVideoLikeInput(inferRequest) {
+    const input = inferRequest?.input;
+    if (!input || typeof input !== 'object')
+        return undefined;
+    return input;
+}
+function deriveAdaptivePollTimeoutMs(inferRequest) {
+    const input = resolveVideoLikeInput(inferRequest);
+    const frames = readPositiveInt(input?.frames);
+    if (!frames)
+        return undefined;
+    const fps = readPositiveInt(input?.fps) ?? 10;
+    const renderSeconds = Math.max(1, Math.ceil(frames / Math.max(1, fps)));
+    const queueAndVarianceBufferMs = 240000;
+    const frameScaledMs = frames * 4000;
+    const durationScaledMs = renderSeconds * 60000;
+    const derivedMs = queueAndVarianceBufferMs + Math.max(frameScaledMs, durationScaledMs);
+    const roundedMs = roundUpMs(derivedMs, 30000);
+    return Math.min(1800000, Math.max(360000, roundedMs));
+}
 function withCatalogFallback(reason, warning) {
     return listOnDemandServices().map((s) => ({
         ...s,
@@ -43,10 +72,10 @@ export const ondemand = {
             return withCatalogFallback('live-empty', 'Live on-demand catalog returned no services; using embedded catalog fallback.');
         }
         catch (error) {
-            if (isStructuredError(error) && error.code.startsWith('HTTP_')) {
-                throw error;
-            }
-            return withCatalogFallback('network-or-parse-error', `Live on-demand catalog unavailable; using embedded catalog fallback (${summarizeError(error)}).`);
+            const reason = isStructuredError(error) && error.code.startsWith('HTTP_')
+                ? 'live-http-error'
+                : 'network-or-parse-error';
+            return withCatalogFallback(reason, `Live on-demand catalog unavailable; using embedded catalog fallback (${summarizeError(error)}).`);
         }
     },
     infer: (cfg, service, payload) => cfg.dryRun ? { dryRun: true, service, payload } : onDemandApiClient.createInferRequest(cfg, service, payload),
@@ -56,7 +85,10 @@ export const ondemand = {
         if (!requestId)
             throw new Error('requestId is required');
         const intervalMs = clampFiniteInt(opts.intervalMs, 3000, 100, 60000);
-        const timeoutMs = clampFiniteInt(opts.timeoutMs, 120000, 1000, 3600000);
+        const explicitTimeoutMs = opts.timeoutMs === undefined
+            ? undefined
+            : clampFiniteInt(opts.timeoutMs, 120000, 1000, 3600000);
+        let timeoutMs = explicitTimeoutMs ?? 120000;
         const maxAttempts = clampFiniteInt(opts.maxAttempts, 1000, 1, 20000);
         const startedAt = Date.now();
         let attempts = 0;
@@ -75,6 +107,12 @@ export const ondemand = {
             const result = await onDemandApiClient.getInferRequest(cfg, requestId);
             lastResult = result;
             const inferRequest = getFirstInferRequest(result);
+            if (explicitTimeoutMs === undefined) {
+                const adaptiveTimeoutMs = deriveAdaptivePollTimeoutMs(inferRequest);
+                if (adaptiveTimeoutMs !== undefined) {
+                    timeoutMs = adaptiveTimeoutMs;
+                }
+            }
             if (isTerminal(inferRequest?.state)) {
                 return {
                     attempts,

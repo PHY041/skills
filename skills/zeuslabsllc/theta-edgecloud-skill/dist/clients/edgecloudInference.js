@@ -3,7 +3,7 @@ import { fromConfigError } from '../errors.js';
 const ALLOWED_INFERENCE_DOMAIN_SUFFIXES = ['.thetaedgecloud.com'];
 function isLoopbackOrPrivateHost(hostname) {
     const host = hostname.toLowerCase();
-    if (host === 'localhost' || host === '::1')
+    if (host === 'localhost' || host === '::1' || host === '0.0.0.0' || host === '::ffff:127.0.0.1')
         return true;
     if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
         const parts = host.split('.').map((p) => Number.parseInt(p, 10));
