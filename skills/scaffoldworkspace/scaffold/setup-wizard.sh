@@ -55,12 +55,22 @@ echo "  Applying configuration..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+# ── Sanitize user inputs for safe sed substitution ─────────────────────────
+# Escapes /, \, & which are special characters in sed replacement strings
+
+escape_sed() {
+  printf '%s' "$1" | sed 's/[\/&]/\\&/g'
+}
+
+SAFE_HUMAN=$(escape_sed "$YOUR_HUMAN")
+SAFE_AGENT=$(escape_sed "$AGENT_NAME")
+
 # ── Replace [YOUR_HUMAN] in all markdown files ──────────────────────────────
 
 REPLACED_FILES=()
 while IFS= read -r -d '' file; do
   if grep -q "\[YOUR_HUMAN\]" "$file" 2>/dev/null; then
-    sed -i "s/\[YOUR_HUMAN\]/${YOUR_HUMAN}/g" "$file"
+    sed -i "s/\[YOUR_HUMAN\]/${SAFE_HUMAN}/g" "$file"
     REPLACED_FILES+=("$(basename "$file")")
   fi
 done < <(find "$WORKSPACE" -maxdepth 2 -name "*.md" -o -name "*.sh" | tr '\n' '\0')
@@ -78,8 +88,8 @@ fi
 
 IDENTITY_FILE="$WORKSPACE/IDENTITY.md"
 if [[ -f "$IDENTITY_FILE" ]]; then
-  sed -i "s/\[NAME PENDING\]/${AGENT_NAME}/g" "$IDENTITY_FILE"
-  sed -i "s/\[not set yet\]/${AGENT_NAME}/g" "$IDENTITY_FILE"
+  sed -i "s/\[NAME PENDING\]/${SAFE_AGENT}/g" "$IDENTITY_FILE"
+  sed -i "s/\[not set yet\]/${SAFE_AGENT}/g" "$IDENTITY_FILE"
   echo "✓ IDENTITY.md — agent name set to '${AGENT_NAME}'"
 fi
 

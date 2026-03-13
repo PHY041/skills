@@ -40,4 +40,4 @@ Then open a session and say: *"I'm ready for the first session."*
 
 Scaffold Full adds: SESSION-STATE.md + WAL protocol, MULTI-MODEL-ROUTING.md ($480-660/year savings), Scout/Forge/Quill sub-agent templates, HEARTBEAT.md, named workflows, and more.
 
-→ [Scaffold Full on Gumroad](https://gumroad.com/scaffoldworkspace)
+→ [Scaffold Full on Gumroad](https://getscaffold.gumroad.com/l/ixtnp)

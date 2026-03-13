@@ -27,6 +27,21 @@ Scaffold gives your AI agent a real operating system — memory, identity, behav
 
 ---
 
+## Security Note
+
+Scaffold grants your AI agent real access to your file system, shell, and network. This is intentional — it's what makes it useful.
+
+**What that means in practice:**
+- The agent can read, write, and execute files in your workspace
+- It can spawn sub-agents and run shell commands
+- `AGENTS.md` defines permission tiers that limit what it does autonomously
+
+**Recommended setup:** Run on a dedicated machine, VPS, or isolated environment. Avoid deploying in a shared or production environment without understanding the access model first.
+
+This is a power tool. Use it like one.
+
+---
+
 ## Setup (5 minutes)
 
 **1. Install**
@@ -83,7 +98,7 @@ Scaffold Full includes everything in Lite plus:
 - **model-tiers.json + scaffold.config.json** — pre-configured, not DIY
 - Future updates included
 
-→ [Get Scaffold Full on Gumroad](https://gumroad.com/scaffoldworkspace)
+→ [Get Scaffold Full on Gumroad](https://getscaffold.gumroad.com/l/ixtnp)
 
 ---
 
