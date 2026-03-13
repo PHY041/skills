@@ -1,11 +1,17 @@
 {
   "owner": "dophinl",
   "slug": "youmind-youtube-transcript",
-  "displayName": "YouTube Transcript Extractor",
+  "displayName": "Youmind Youtube Transcript",
   "latest": {
-    "version": "1.0.8",
-    "publishedAt": 1773243529637,
-    "commit": "https://github.com/openclaw/skills/commit/603990225fbb5aca7687fba9dc98654863fedc9d"
+    "version": "1.3.4",
+    "publishedAt": 1773366978980,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.8",
+      "publishedAt": 1773243529637,
+      "commit": "https://github.com/openclaw/skills/commit/603990225fbb5aca7687fba9dc98654863fedc9d"
+    }
+  ]
 }
