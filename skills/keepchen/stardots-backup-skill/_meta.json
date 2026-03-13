@@ -1,0 +1,11 @@
+{
+  "owner": "keepchen",
+  "slug": "stardots-backup-skill",
+  "displayName": "Backup image to StarDots",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773131555907,
+    "commit": null
+  },
+  "history": []
+}
