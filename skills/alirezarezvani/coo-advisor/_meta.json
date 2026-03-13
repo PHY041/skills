@@ -3,11 +3,16 @@
   "slug": "coo-advisor",
   "displayName": "Coo Advisor",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773070326060,
-    "commit": "https://github.com/openclaw/skills/commit/ceddb12aa4b567b66eafdc7b854d3851053c1c86"
+    "version": "2.1.1",
+    "publishedAt": 1773180218099,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773070326060,
+      "commit": "https://github.com/openclaw/skills/commit/ceddb12aa4b567b66eafdc7b854d3851053c1c86"
+    },
     {
       "version": "2.0.0",
       "publishedAt": 1772746526398,
