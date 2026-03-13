@@ -3,9 +3,15 @@
   "slug": "local-voice-reply",
   "displayName": "Local Voice Reply",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1772994265078,
-    "commit": "https://github.com/openclaw/skills/commit/58a74c31ed32d0124e432627c6a4db0ff6bba905"
+    "version": "3.3.1",
+    "publishedAt": 1773419791514,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1772994265078,
+      "commit": "https://github.com/openclaw/skills/commit/58a74c31ed32d0124e432627c6a4db0ff6bba905"
+    }
+  ]
 }
