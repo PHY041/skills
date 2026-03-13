@@ -1,11 +1,17 @@
 {
   "owner": "yipintangzsp",
   "slug": "amazon-niche-finder",
-  "displayName": "亚马逊蓝海选品助手",
+  "displayName": "Amazon Niche Finder",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772807057528,
-    "commit": "https://github.com/openclaw/skills/commit/8da40e71ed3bf40e91378e6d0ba9a8b04c46de6a"
+    "version": "1.1.0",
+    "publishedAt": 1773111764505,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772807057528,
+      "commit": "https://github.com/openclaw/skills/commit/8da40e71ed3bf40e91378e6d0ba9a8b04c46de6a"
+    }
+  ]
 }
