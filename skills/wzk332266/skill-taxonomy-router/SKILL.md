@@ -162,7 +162,7 @@ When a task arrives, do this:
    - lower context cost
 9. If task is ambiguous, stay with the least risky useful skill or ask only one clarifying question.
 10. If task needs no skill, use built-in tools directly.
-11. After a skill is actually chosen and used, treat routing-decision logging as the default post-action: record the chosen skill(s) with `python3 scripts/log_routing_decision.py ...` unless there is a concrete reason not to.
+11. After a skill is actually chosen and used, local implementations may optionally record the routing decision as part of their own private governance workflow.
 
 ## Multi-skill composition rules
 Use multiple skills only when roles are distinct, for example:
@@ -215,8 +215,8 @@ Use this workflow to keep the router current:
 6. Keep `references/change-log.md` short and append-only.
 
 ## Usage tracking
-Track skill frequency over time using your local tooling or router implementation.
-Treat routing-decision logging and usage counting as recommended local practices, but keep the public package lightweight and host-agnostic.
+Track skill frequency over time using local/private governance mechanisms if desired.
+In the public package, treat usage tracking as a recommended practice rather than a bundled capability.
 Use frequency as a prioritization signal for backlog classification: high-use backlog-adjacent domains should be reviewed first.
 
 ## Taxonomy expansion rule
@@ -252,6 +252,7 @@ Rules:
 - Newly downloaded skills should be reviewed before they influence routing priority.
 - Before downloading a new skill, check the existing organized/classified skill set to avoid redundant downloads and unnecessary overlap.
 - New-skill risk operations still require explicit user approval.
+- The public package does not bundle any downloader, logger, or cleanup scripts; implement those locally if needed.
 
 ## External risk signals
 When available, use external risk/security signals to speed up review:
@@ -264,8 +265,8 @@ When available, use external risk/security signals to speed up review:
 - `references/skill-classification-schema.md`: schema/checklist for classification decisions
 
 ## Public package note
-This public package intentionally ships the routing taxonomy, review rules, and classification schema as a lightweight governance skill.
-Local automation scripts, local indexes, intake state, overlap reports, and destructive/host-specific helpers are intentionally excluded from the published package.
+This public package intentionally ships the routing taxonomy, review rules, and classification schema as a lightweight policy-only governance skill.
+It does not bundle local automation scripts, local indexes, intake state, persistent logging/telemetry code, overlap reports, or destructive/host-specific helpers.
 Use local/private extensions if you need heavier automation in a specific host environment.
 
 ## Output format for future routing decisions

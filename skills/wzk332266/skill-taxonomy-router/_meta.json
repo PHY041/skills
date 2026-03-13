@@ -3,9 +3,15 @@
   "slug": "skill-taxonomy-router",
   "displayName": "Skill Taxonomy Router",
   "latest": {
-    "version": "1.4.0",
-    "publishedAt": 1773377275116,
-    "commit": "https://github.com/openclaw/skills/commit/44d2b2c26999414390fe26b70717856ebac7393c"
+    "version": "1.4.1",
+    "publishedAt": 1773377918961,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.4.0",
+      "publishedAt": 1773377275116,
+      "commit": "https://github.com/openclaw/skills/commit/44d2b2c26999414390fe26b70717856ebac7393c"
+    }
+  ]
 }
