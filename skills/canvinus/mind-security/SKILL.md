@@ -1,42 +1,52 @@
 ---
 name: mind-security
 description: >
-  AI security toolkit — deepfake and AI-generated media detection.
-  Use when verifying if an image, video, or audio is a deepfake or AI-generated.
+  AI security toolkit — deepfake detection, prompt injection scanning,
+  malware/phishing URL scanning, and AI text detection.
+  Use when: (1) verifying if an image, video, or audio is a deepfake or AI-generated,
+  (2) scanning user inputs for prompt injection attacks,
+  (3) scanning URLs for malware, phishing, or domain reputation threats,
+  (4) determining if text was written by an LLM.
 metadata: {"openclaw": {"emoji": "🛡️", "requires": {"bins": ["python3"], "anyBins": ["curl", "wget"]}, "homepage": "https://github.com/mind-sec/mind-security"}}
 ---
 
 # mind-security
 
-Deepfake detection powered by [Bittensor Subnet 34](https://bitmind.ai). The detection model evolves continuously through adversarial competition — generation miners push realism while detection miners improve accuracy.
+AI security toolkit with four active modules.
 
 ## Quick Reference
 
 | Task | Command | Docs |
 |------|---------|------|
-| Detect image | `python3 scripts/check_deepfake.py <path_or_url>` | [deepfake-detection.md](references/deepfake-detection.md) |
-| Detect via curl | `curl -X POST https://api.bitmind.ai/detect-image -H "Authorization: Bearer $BITMIND_API_KEY" -d '{"image":"<url>"}'` | [deepfake-detection.md](references/deepfake-detection.md) |
-| Detect video | `curl -X POST https://api.bitmind.ai/detect-video -d '{"video":"<url>","debug":true}'` | [deepfake-detection.md](references/deepfake-detection.md) |
+| Deepfake detection | `python3 scripts/check_deepfake.py <path_or_url>` | [deepfake-detection.md](references/deepfake-detection.md) |
+| Prompt injection scan | `python3 scripts/check_prompt_injection.py "<text>"` | [prompt-injection.md](references/prompt-injection.md) |
+| Malware/phishing scan | `python3 scripts/check_malware.py "https://..."` | [malware-scanning.md](references/malware-scanning.md) |
+| AI text detection | `python3 scripts/check_ai_text.py "<text>"` | [ai-text-detection.md](references/ai-text-detection.md) |
 
-## How It Works
+## Modules
 
-The API accepts **any URL** — direct image links, social media posts, YouTube videos. Media is downloaded and analyzed server-side.
+**Deepfake detection** — BitMind API (Bittensor Subnet 34) for images and videos. Supports YouTube, Twitter/X, TikTok URLs. EXIF/metadata fallback for local images. Set `BITMIND_API_KEY` ([get key](https://app.bitmind.ai/api/keys)).
 
-**Image pipeline:** Auth → Cache → Download → Preprocess → C2PA → Parallel (Subnet 34 detection + similarity matching) → isAI + confidence
+**Prompt injection** — Multi-layer: 50+ regex patterns (instant, zero-dep) + LLM Guard ML scanner (optional, `pip install llm-guard`). Detects DAN jailbreaks, prompt extraction, context manipulation, and novel attacks.
 
-**Video pipeline:** Same, plus absurdity analysis (3-way parallel). Absurdity returns a natural language description of what the video shows and flags physically impossible content.
+**Malware/phishing scanning** — VirusTotal (70+ engines), URLScan.io (1500+ brands), Google Safe Browsing, plus local heuristics (typosquatting, suspicious TLDs, phishing patterns). Works with no keys via heuristics.
 
-**isAI logic:** C2PA evidence > similarity ≥0.7 > absurdity ≥0.8 (video) > model prediction ≥0.5. Each signal can only increase confidence.
+**AI text detection** — GPTZero API with per-sentence scoring and ~99% accuracy across GPT-4/5, Claude, Gemini, LLaMA. Requires `GPTZERO_API_KEY` ([get key](https://gptzero.me/dashboard)).
 
-**Response:** `{isAI: bool, confidence: float, similarity: float}`. With `debug: true`, adds raw score, processing time, C2PA details, and absurdity analysis (video).
+## API Keys
 
-## Setup
-
-Requires `BITMIND_API_KEY` — register or log in at [app.bitmind.ai](https://app.bitmind.ai), then generate a key at [app.bitmind.ai/api/keys](https://app.bitmind.ai/api/keys).
+| Env Var | Used By | Required | Get It |
+|---------|---------|----------|--------|
+| `BITMIND_API_KEY` | Deepfake detection | For API mode | [app.bitmind.ai/api/keys](https://app.bitmind.ai/api/keys) |
+| `GPTZERO_API_KEY` | AI text detection | **Yes** | [gptzero.me/dashboard](https://gptzero.me/dashboard) |
+| `VIRUSTOTAL_API_KEY` | Malware scanner | Optional | [virustotal.com](https://virustotal.com) |
+| `URLSCAN_API_KEY` | Malware scanner | Optional | [urlscan.io](https://urlscan.io) |
+| `GOOGLE_SAFE_BROWSING_KEY` | Malware scanner | Optional | [console.cloud.google.com](https://console.cloud.google.com) |
 
 ## Script Conventions
 
 - `python3 scripts/<script>.py --help`
-- Zero pip dependencies (stdlib only)
+- Core: zero pip dependencies (stdlib only)
+- Optional ML: `pip install llm-guard` for prompt injection Layer 2
 - JSON to stdout, errors to stderr
 - Exit 0 success, exit 1 failure
