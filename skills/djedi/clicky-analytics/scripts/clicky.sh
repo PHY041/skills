@@ -1,63 +1,43 @@
 #!/usr/bin/env bash
 # clicky.sh — Fetch analytics from Clicky API
-# Usage: clicky.sh <site_name|--id ID --key KEY> <type> [options]
+# Usage: clicky.sh <site_name> <type> [options]
+# Credentials read from env: CLICKY_<NAME>_SITE_ID + CLICKY_<NAME>_SITEKEY
+# Or for default: CLICKY_SITE_ID + CLICKY_SITEKEY
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SITES_FILE="$SCRIPT_DIR/../references/sites.json"
 API_URL="https://api.clicky.com/api/stats/4"
 
-SITE_ID=""
-SITEKEY=""
-TYPE=""
-DATE="today"
-LIMIT="50"
-DAILY=""
-OUTPUT="json"
-PAGE=""
+SITE_NAME="${1:?Usage: clicky.sh <site_name> <type> [--date DATE] [--limit N] [--daily]}"
+shift
 
-# Parse first arg — site name or --id
-if [[ "${1:-}" == "--id" ]]; then
-  SITE_ID="$2"
-  shift 2
-  if [[ "${1:-}" == "--key" ]]; then
-    SITEKEY="$2"
-    shift 2
-  else
-    echo "Error: --id requires --key" >&2; exit 1
-  fi
+# Resolve credentials from environment
+UPPER_NAME=$(echo "$SITE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+
+if [[ "$UPPER_NAME" == "DEFAULT" ]]; then
+  SITE_ID="${CLICKY_SITE_ID:?Set CLICKY_SITE_ID env var}"
+  SITEKEY="${CLICKY_SITEKEY:?Set CLICKY_SITEKEY env var}"
 else
-  # Look up site by name
-  SITE_NAME="${1:?Usage: clicky.sh <site_name> <type> [options]}"
-  shift
-  if [[ -f "$SITES_FILE" ]]; then
-    SITE_ID=$(python3 -c "
-import json, sys
-sites = json.load(open('$SITES_FILE'))
-for s in sites:
-    if s['name'] == '$SITE_NAME' or s.get('domain','').startswith('$SITE_NAME'):
-        print(s['site_id']); sys.exit(0)
-print(''); sys.exit(1)
-" 2>/dev/null) || true
-    SITEKEY=$(python3 -c "
-import json, sys
-sites = json.load(open('$SITES_FILE'))
-for s in sites:
-    if s['name'] == '$SITE_NAME' or s.get('domain','').startswith('$SITE_NAME'):
-        print(s['sitekey']); sys.exit(0)
-print(''); sys.exit(1)
-" 2>/dev/null) || true
-  fi
+  ID_VAR="CLICKY_${UPPER_NAME}_SITE_ID"
+  KEY_VAR="CLICKY_${UPPER_NAME}_SITEKEY"
+  SITE_ID="${!ID_VAR:-}"
+  SITEKEY="${!KEY_VAR:-}"
+
+  # Fall back to default if named vars not found
   if [[ -z "$SITE_ID" || -z "$SITEKEY" ]]; then
-    echo "Error: Site '$SITE_NAME' not found in $SITES_FILE" >&2
-    echo "Available sites:" >&2
-    python3 -c "import json; [print(f\"  {s['name']} ({s.get('domain','')})\") for s in json.load(open('$SITES_FILE'))]" 2>/dev/null
+    echo "Error: Set ${ID_VAR} and ${KEY_VAR} environment variables" >&2
+    echo "Or use CLICKY_SITE_ID and CLICKY_SITEKEY for a default site" >&2
     exit 1
   fi
 fi
 
 TYPE="${1:?Missing type (e.g. visitors,pages,countries)}"
 shift
+
+DATE="today"
+LIMIT="50"
+DAILY=""
+OUTPUT="json"
+PAGE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

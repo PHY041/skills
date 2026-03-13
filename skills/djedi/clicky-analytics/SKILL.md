@@ -1,25 +1,39 @@
 ---
 name: clicky-analytics
 description: Fetch website analytics from Clicky (clicky.com) via their REST API. Use when the user asks about website traffic, visitors, pageviews, top pages, bounce rate, search rankings, traffic sources, countries, or any Clicky analytics data. Also use for scheduled analytics reports or comparing traffic across date ranges.
-metadata: {"openclaw":{"emoji":"📊"}}
+metadata: {"openclaw":{"emoji":"📊","primaryEnv":"CLICKY_SITEKEY","requires":{"bins":["curl"],"env":["CLICKY_SITE_ID","CLICKY_SITEKEY"]}}}
 ---
 
 # Clicky Analytics
 
-Fetch analytics from the Clicky API. Supports multiple sites.
+Fetch analytics from the Clicky API. Supports multiple sites via environment variables.
 
-## Site Registry
+## Setup
 
-Sites are stored in `references/sites.json`. Read this file to look up site_id and sitekey by name.
+Store site credentials as environment variables. Use the naming convention `CLICKY_<NAME>_SITE_ID` and `CLICKY_<NAME>_SITEKEY`:
+
+```bash
+# In ~/.openclaw/.env or your shell profile
+CLICKY_ENVELOPEBUDGET_SITE_ID=101427673
+CLICKY_ENVELOPEBUDGET_SITEKEY=c287a01cc00f70cb
+CLICKY_ZAPYETI_SITE_ID=99999999
+CLICKY_ZAPYETI_SITEKEY=abc123def456
+```
+
+For a single default site, use:
+```bash
+CLICKY_SITE_ID=101427673
+CLICKY_SITEKEY=c287a01cc00f70cb
+```
 
 ## Usage
 
 ```bash
-# By site name (looks up from sites.json)
+# Named site (reads CLICKY_<NAME>_SITE_ID and CLICKY_<NAME>_SITEKEY env vars)
 scripts/clicky.sh envelopebudget visitors,actions-pageviews
 
-# By explicit credentials
-scripts/clicky.sh --id 101427673 --key c287a01cc00f70cb visitors,actions-pageviews
+# Default site (reads CLICKY_SITE_ID and CLICKY_SITEKEY env vars)
+scripts/clicky.sh default visitors,actions-pageviews
 
 # With options
 scripts/clicky.sh envelopebudget pages --date last-7-days --limit 20
@@ -33,7 +47,7 @@ scripts/clicky.sh envelopebudget visitors --date 2026-03-01,2026-03-13 --daily
 - `--page N` — paginate through results
 
 ### Combine types in one request
-Use commas to batch: `visitors,visitors-unique,actions-pageviews,bounce-rate,time-average-pretty`
+Use commas: `visitors,visitors-unique,actions-pageviews,bounce-rate,time-average-pretty`
 
 ## Common Reports
 
@@ -43,13 +57,6 @@ Use commas to batch: `visitors,visitors-unique,actions-pageviews,bounce-rate,tim
 | Content | `pages,pages-entrance,pages-exit` |
 | Traffic | `traffic-sources,links-domains,searches,countries` |
 | SEO | `searches,searches-rankings,searches-keywords` |
-
-## Adding Sites
-
-Edit `references/sites.json` to add new sites:
-```json
-{"name": "mysite", "site_id": "12345", "sitekey": "abc123def456", "domain": "mysite.com"}
-```
 
 ## API Reference
 
