@@ -1,13 +1,18 @@
 {
   "owner": "logictortoise",
   "slug": "anygen-slide-generator",
-  "displayName": "PowerPoint/Slides Generator (PPTX) - AnyGen",
+  "displayName": "Slide Generator",
   "latest": {
-    "version": "1.4.1",
-    "publishedAt": 1772770412860,
-    "commit": "https://github.com/openclaw/skills/commit/a37cf023d16a55c6919af45c2adb57c8f91f4717"
+    "version": "1.5.7",
+    "publishedAt": 1773249969493,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.4.1",
+      "publishedAt": 1772770412860,
+      "commit": "https://github.com/openclaw/skills/commit/a37cf023d16a55c6919af45c2adb57c8f91f4717"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1772634974340,
