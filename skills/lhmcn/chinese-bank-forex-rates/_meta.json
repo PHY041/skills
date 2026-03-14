@@ -1,0 +1,11 @@
+{
+  "owner": "lhmcn",
+  "slug": "chinese-bank-forex-rates",
+  "displayName": "银行外汇牌价",
+  "latest": {
+    "version": "0.1.1",
+    "publishedAt": 1773464635713,
+    "commit": null
+  },
+  "history": []
+}
