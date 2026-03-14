@@ -1,0 +1,11 @@
+{
+  "owner": "gora050",
+  "slug": "google-vertex-ai",
+  "displayName": "Google Vertex Ai",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773378187408,
+    "commit": null
+  },
+  "history": []
+}
