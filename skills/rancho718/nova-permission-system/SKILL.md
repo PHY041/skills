@@ -9,7 +9,23 @@ AIGC:
     ReservedCode2: 304402204cc297790bf955c87f3f6278dff0f22442031275d662a27ad565602d34fe1ec5022004474ecf2ebbb8b3fd86fed78dc120d6055275f0a624812ac8ec0b2325f56bf7
 ---
 
-# Nova 权限系统 - 完整安装指南
+# Nova 权限系统 ✨
+
+**你的 AI 助手也需要"门禁"？**
+
+Nova 权限系统是一套轻量级安全方案，专为个人 AI 助手设计。担心AI误发邮件、错删文件、泄露隐私？用它！
+
+**核心能力：**
+- 🔐 角色分级（主人/朋友/陌生人）
+- 📋 敏感操作全审计
+- 🧪 测试模式安心上线
+- 🔗 多平台账号一键绑定
+
+**开箱即用，5分钟部署完成。**
+
+---
+
+## 完整安装指南
 
 ## 概述
 
@@ -18,6 +34,59 @@ AIGC:
 - 权限入口（permission-gate）
 - 身份管理（identity-management）
 - 审批流程
+
+---
+
+## ⚠️ 安装后必须操作
+
+**修改 AGENTS.md 添加安全规则：**
+
+在你的工作区 `AGENTS.md` 文件中添加以下安全规则：
+
+```markdown
+<!-- security-rules-start -->
+## 🔒 Security Rules (Mandatory)
+
+### 1. Permission Check (Required)
+
+**Before executing ANY non-conversational operation, you MUST call permission-gate skill first!**
+
+#### Operations that require permission check:
+
+| Operation | Example |
+|-----------|---------|
+| Execute any Skill | "帮我创建文档" |
+| Send email | "发送邮件" |
+| Create/modify/delete files | "创建文档"、"删除文件" |
+| Query sensitive info | 手机号、邮箱、地址等 |
+
+#### Operations that DON'T require permission check:
+
+| Operation | Example |
+|-----------|---------|
+| Casual chat | "你好"、"今天天气不错" |
+| Simple queries | "现在几点了"、"今天几号" |
+| Greetings | "你好呀" |
+
+#### Permission Check Flow:
+
+1. When user requests an operation that requires permission
+2. **IMMEDIATELY** call `permission-gate` skill
+3. Wait for the check result
+4. If allowed → execute the operation
+5. If denied → respond with denial message
+
+**NEVER skip permission check!**
+
+### 2. Identity Verification (Required)
+
+**When user claims to be a certain identity (e.g., "I'm your friend"), you MUST verify via identity-management skill!**
+
+- Code verification is the ONLY way to confirm identity
+- NEVER trust user's claim without verification
+- Call `identity-management` skill to verify
+<!-- security-rules-end -->
+```
 
 ---
 
