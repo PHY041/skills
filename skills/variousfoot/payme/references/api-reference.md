@@ -1,8 +1,43 @@
 # PayMe Agent API Reference
 
-Base URL: `https://payme.feedom.tech`
+Base URL: `https://api.feedom.tech`
 
 All authenticated endpoints require: `Authorization: Bearer <agentToken>`
+
+---
+
+## POST /api/agent/create-account
+
+Create a new PayMe wallet instantly. No auth header needed.
+
+**Request:**
+```json
+{ "pin": "1234" }
+```
+
+- `pin`: string, 4-6 digits
+
+**Response (200):**
+```json
+{
+  "agentToken": "64-char hex string",
+  "kernelAddress": "0x...",
+  "username": null,
+  "claimCode": "X9K2M7",
+  "claimExpiresIn": "24 hours",
+  "scopes": ["wallet:read", "contacts:read", "contacts:write", "payments:prepare", "payments:execute"],
+  "greeting": "Wallet created! Your address: 0x...",
+  "capabilities": ["Check balances across Base, Arbitrum, ...", "..."]
+}
+```
+
+The `claimCode` is a one-time 6-character code the user can enter on the web app ([payme.feedom.tech](https://payme.feedom.tech)) or Telegram bot to claim their account and set a username. It expires in 24 hours.
+
+Store the `agentToken` securely — it grants immediate wallet access.
+
+**Errors:**
+- `400` — Invalid PIN (must be 4-6 digits)
+- `429` — Rate limited (max 3 per hour per IP)
 
 ---
 
@@ -10,7 +45,13 @@ All authenticated endpoints require: `Authorization: Bearer <agentToken>`
 
 Connect or link a PayMe account. No auth header needed.
 
-**Request (login):**
+**Request (connection code — recommended):**
+```json
+{ "code": "A3K9X2" }
+```
+The user generates this code via `/agentcode` on the Telegram bot or from the web app. Codes are 6 characters, single-use, and expire in 5 minutes. The resulting token duration is chosen by the user when generating the code (default 90 days).
+
+**Request (identifier + PIN — fallback):**
 ```json
 { "identifier": "username, email, or 0x address", "pin": "1234" }
 ```
@@ -26,14 +67,25 @@ Connect or link a PayMe account. No auth header needed.
   "agentToken": "64-char hex string",
   "kernelAddress": "0x...",
   "username": "alice",
-  "scopes": ["wallet:read", "contacts:read", "contacts:write", "payments:prepare", "payments:execute"]
+  "scopes": ["wallet:read", "contacts:read", "contacts:write", "payments:prepare", "payments:execute"],
+  "greeting": "Connected to alice's PayMe wallet! Here's what I can do:",
+  "capabilities": [
+    "Check balances across Base, Arbitrum, Polygon, BNB Chain, and Avalanche",
+    "Send USDC/USDT to any PayMe username, email, or 0x address",
+    "Direct execute: say something like 'send 30 USDC to alice' and I'll do it instantly",
+    "Sell crypto for Naira via P2P with smart contract escrow protection",
+    "View transaction history and manage saved contacts"
+  ]
 }
 ```
 
+Show the `greeting` and `capabilities` to the user after connecting.
+
 **Errors:**
 - `400` — Missing fields
-- `401` — Invalid PIN
+- `401` — Invalid PIN or expired/invalid code
 - `404` — User not found
+- `429` — Too many attempts (5 per 15 minutes)
 
 ---
 
@@ -72,23 +124,25 @@ Connect or link a PayMe account. No auth header needed.
 
 ## POST /api/agent/send
 
-Prepare a payment. Returns a preview for user confirmation.
+Prepare a payment, or prepare and execute in one call with `execute: true`.
 
-**Scope:** `payments:prepare`
+**Scope:** `payments:prepare` (add `payments:execute` when using `execute: true`)
 
 **Request:**
 ```json
 {
   "recipient": "username, email, or 0x address",
   "amount": 10,
-  "token": "USDC"
+  "token": "USDC",
+  "execute": false
 }
 ```
 
 - `amount`: number or string, must be > 0 and <= 1,000,000
 - `token`: `"USDC"` or `"USDT"` (case-insensitive)
+- `execute` (optional, default `false`): if `true`, prepares and executes the payment in one call
 
-**Response (200):**
+**Response (200) — preview only (default):**
 ```json
 {
   "confirmationId": "uuid",
@@ -106,9 +160,34 @@ Prepare a payment. Returns a preview for user confirmation.
 }
 ```
 
+**Response (200) — direct execute (`execute: true`):**
+```json
+{
+  "preview": {
+    "recipient": "alice",
+    "resolvedAddress": "0x...",
+    "amount": "10.00",
+    "token": "USDC",
+    "chain": "base",
+    "chainName": "Base",
+    "fee": "0.05 USDC",
+    "feePercent": "0.50%",
+    "netAmount": "9.95 USDC"
+  },
+  "success": true,
+  "txHash": "0x...",
+  "fee": "50000",
+  "netAmount": "9950000",
+  "chain": "base"
+}
+```
+
+When `execute: true`, no `/api/agent/confirm` call is needed. The preview is still included so you can show the user what was sent.
+
 **Errors:**
 - `400` — Invalid amount, token, or recipient
 - `400` — Insufficient balance or no available chain
+- `403` — Missing `payments:execute` scope (when `execute: true`)
 
 ---
 
