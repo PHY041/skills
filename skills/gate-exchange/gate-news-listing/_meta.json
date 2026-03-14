@@ -1,0 +1,11 @@
+{
+  "owner": "gate-exchange",
+  "slug": "gate-news-listing",
+  "displayName": "Gate News Listing",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773365371342,
+    "commit": null
+  },
+  "history": []
+}
