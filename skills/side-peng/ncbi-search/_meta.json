@@ -1,0 +1,11 @@
+{
+  "owner": "side-peng",
+  "slug": "ncbi-search",
+  "displayName": "ncbi-search",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773401174380,
+    "commit": null
+  },
+  "history": []
+}
