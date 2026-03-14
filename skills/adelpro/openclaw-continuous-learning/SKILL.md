@@ -1,9 +1,11 @@
 ---
 name: openclaw-continuous-learning
 slug: openclaw-continuous-learning
-version: 1.1.0
+version: 1.2.1
 description: |
   Instinct-based learning system for OpenClaw. Analyzes sessions, detects patterns, creates atomic learnings with confidence scoring, and suggests optimizations for self-evolution.
+  
+  Works alongside agent-self-improvement for complete learning: internal session analysis + external user feedback.
   
   Use when: you want your AI agent to learn from its own behavior, improve over time, discover optimization opportunities, or build a self-improving automation system.
   
@@ -54,32 +56,56 @@ An instinct-based learning system that helps AI agents improve themselves throug
 ## Architecture
 
 ```
-Session Activity
- │
- ▼
-┌─────────────────────────────────────────┐
-│ Session Analysis                         │
-│ • Read interaction logs                  │
-│ • Detect patterns                       │
-│ • Create instincts                       │
-└─────────────────────────────────────────┘
- │
- ▼
-┌─────────────────────────────────────────┐
-│ Instinct Storage                         │
-│ • instincts.jsonl (atomic learnings)     │
-│ • patterns.json (aggregated)             │
-│ • optimizations.json (suggestions)       │
-└─────────────────────────────────────────┘
- │
- ▼
-┌─────────────────────────────────────────┐
-│ Optimization Delivery                    │
-│ • Daily tips                            │
-│ • Configuration suggestions             │
-│ • Workflow improvements                 │
-└─────────────────────────────────────────┘
+~/.openclaw/agents/ (session .jsonl files)
+        │
+        ▼
+┌───────────────────────────────────────────┐
+│ analyze.mjs                                │
+│ • Reads session history                   │
+│ • Extracts tool calls & errors             │
+│ • Detects patterns                         │
+└───────────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────────────────┐
+│ memory/learning/                           │
+│ • instincts.jsonl (atomic learnings)       │
+│ • patterns.json (aggregated)              │
+│ • optimizations.json (suggestions)         │
+└───────────────────────────────────────────┘
 ```
+
+## External Feedback (Sub-Skill)
+
+This skill works with **agent-self-improvement** (ClawHub) for external user feedback capture:
+
+- **Internal Learning**: Session analysis (this skill)
+- **External Learning**: User feedback via `SKILL:agent-self-improvement`
+
+### Combined Usage
+
+```
+# Nightly: Internal analysis
+SKILL:openclaw-continuous-learning --analyze
+
+# After any output: Capture feedback
+SKILL:agent-self-improvement --job <task> --feedback "<user response>"
+
+# Daily: Generate combined improvements
+SKILL:agent-self-improvement --improve all
+```
+
+### Feedback Flow
+
+```
+User Response → agent-self-improvement → Directive Hints
+        ↓
+Session Analysis → openclaw-continuous-learning → Internal Patterns
+        ↓
+Combined Insights → Agent Optimization
+```
+
+Both skills store learnings in `memory/learning/` and can reference each other's data.
 
 ## Confidence Scoring
 
@@ -185,14 +211,18 @@ Build error-handling instincts
 ## Quick Start
 
 ```bash
-# Analyze sessions
-node /path/to/scripts/analyze.mjs
+# Analyze sessions (reads agent .jsonl files from ~/.openclaw/agents/)
+cd ~/.openclaw/workspace/skills/openclaw-continuous-learning
+node scripts/analyze.mjs
 
 # List learned instincts
-node /path/to/scripts/analyze.mjs instincts
+node scripts/analyze.mjs instincts
 
 # Show optimizations
-node /path/to/scripts/analyze.mjs list
+node scripts/analyze.mjs list
+
+# Show error patterns
+node scripts/analyze.mjs errors
 ```
 
 ## Setup
