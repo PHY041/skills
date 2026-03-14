@@ -1,0 +1,11 @@
+{
+  "owner": "probebuilders",
+  "slug": "rydberg-agent-node",
+  "displayName": "Rydberg Agent Node",
+  "latest": {
+    "version": "2.5.1",
+    "publishedAt": 1773391738491,
+    "commit": null
+  },
+  "history": []
+}
