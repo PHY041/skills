@@ -1,0 +1,11 @@
+{
+  "owner": "knuckles-stack",
+  "slug": "kevros-governance",
+  "displayName": "Kevros Governance",
+  "latest": {
+    "version": "0.3.8",
+    "publishedAt": 1773283983784,
+    "commit": null
+  },
+  "history": []
+}
