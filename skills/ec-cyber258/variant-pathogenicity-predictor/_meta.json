@@ -1,0 +1,11 @@
+{
+  "owner": "ec-cyber258",
+  "slug": "variant-pathogenicity-predictor",
+  "displayName": "Variant Pathogenicity Predictor",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773394527526,
+    "commit": null
+  },
+  "history": []
+}
