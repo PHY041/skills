@@ -1,0 +1,11 @@
+{
+  "owner": "googleworkspace-bot",
+  "slug": "gws-gmail-forward",
+  "displayName": "Gws Gmail Forward",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773393347897,
+    "commit": null
+  },
+  "history": []
+}
