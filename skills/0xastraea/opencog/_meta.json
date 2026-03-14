@@ -1,0 +1,11 @@
+{
+  "owner": "0xastraea",
+  "slug": "opencog",
+  "displayName": "OpenCog",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773349054272,
+    "commit": null
+  },
+  "history": []
+}
