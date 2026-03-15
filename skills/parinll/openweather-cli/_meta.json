@@ -1,0 +1,11 @@
+{
+  "owner": "parinll",
+  "slug": "openweather-cli",
+  "displayName": "OpenWeatherMap CLI",
+  "latest": {
+    "version": "1.0.4",
+    "publishedAt": 1773556418685,
+    "commit": null
+  },
+  "history": []
+}
