@@ -1,0 +1,11 @@
+{
+  "owner": "bytesagain3",
+  "slug": "netstat",
+  "displayName": "Netstat",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773539680650,
+    "commit": null
+  },
+  "history": []
+}
