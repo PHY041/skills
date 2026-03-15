@@ -3,11 +3,16 @@
   "slug": "citedy-seo-agent",
   "displayName": "Clawhub Skill",
   "latest": {
-    "version": "3.0.0",
-    "publishedAt": 1772252523203,
-    "commit": "https://github.com/openclaw/skills/commit/9845ef2763affa9ac5fe0383bfa6edf78103917b"
+    "version": "3.3.0",
+    "publishedAt": 1773442720605,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.0.0",
+      "publishedAt": 1772252523203,
+      "commit": "https://github.com/openclaw/skills/commit/9845ef2763affa9ac5fe0383bfa6edf78103917b"
+    },
     {
       "version": "2.5.0",
       "publishedAt": 1771959861786,
