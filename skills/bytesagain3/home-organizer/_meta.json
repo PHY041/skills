@@ -3,9 +3,15 @@
   "slug": "home-organizer",
   "displayName": "Home Organizer",
   "latest": {
-    "version": "2.3.0",
-    "publishedAt": 1773447735198,
-    "commit": "https://github.com/openclaw/skills/commit/ae5114eac8a01178936e10f178dcfb6449395e04"
+    "version": "2.3.1",
+    "publishedAt": 1773536823142,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.3.0",
+      "publishedAt": 1773447735198,
+      "commit": "https://github.com/openclaw/skills/commit/ae5114eac8a01178936e10f178dcfb6449395e04"
+    }
+  ]
 }

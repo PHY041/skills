@@ -30,3 +30,14 @@ description: "Home Organizer. Use when you need home organizer capabilities. Tri
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
+
+## How It Works
+
+Reads input, processes with built-in logic, outputs results.
+
+## Tips
+
+- Run `home-organizer help` for commands
+- No API keys needed
+- Works offline
+
