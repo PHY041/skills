@@ -1,139 +1,104 @@
 ---
 name: publora-telegram
 description: >
-  Post or schedule content to Telegram channels and groups using the Publora
-  API. Use this skill when the user wants to publish or schedule Telegram
-  messages via Publora.
+  Post or schedule content to Telegram channels and groups using the Publora API.
+  Use this skill when the user wants to publish or schedule Telegram messages via
+  Publora.
 ---
 
 # Publora — Telegram
 
-Post and schedule Telegram channel/group content via the Publora API.
+Telegram platform skill for the Publora API. For auth, core scheduling, media upload, and workspace/webhook docs, see the `publora` core skill.
 
-> **Prerequisite:** Install the `publora` core skill for auth setup and getting platform IDs.
+**Base URL:** `https://api.publora.com/api/v1`  
+**Header:** `x-publora-key: sk_YOUR_KEY`  
+**Platform ID format:** `telegram-{chatId}`
 
-## Platform ID Format
+## Requirements
 
-`telegram-{chatId}` — get your exact ID from `GET /api/v1/platform-connections`.
+1. Create a bot via [@BotFather](https://t.me/BotFather) on Telegram
+2. Copy the bot token
+3. Add the bot as an **administrator** of your target channel or group
+4. Connect via Publora dashboard using the bot token + channel name
 
-## Setup
+## Platform Limits (API — Bot API)
 
-1. Create a bot via **@BotFather** on Telegram → `/newbot` → copy the bot token
-2. Add the bot as **admin** to your channel or group
-3. In Publora dashboard: provide the bot token + channel name (`@mychannel` for public, numeric ID for private channels)
+> ⚠️ Telegram Bot API has a strict 50 MB file limit (not the 4 GB that user clients allow).
 
-⚠️ **Bot must be admin.** Without admin permissions, posts will fail.
+| Property | Bot API Limit | User Client |
+|----------|--------------|-------------|
+| Text (message) | **4,096 characters** | Same |
+| Media caption | **1,024 characters** ⚠️ | 4,096 (Premium) |
+| Images | Up to 10 × 10 MB | JPEG, PNG, GIF, WebP, BMP |
+| Video | **50 MB** ⚠️ | 4 GB |
+| Video formats | MP4, MOV, AVI, MKV, WebM | — |
+| Text only | ✅ Yes | — |
+| Rate limit | 30 messages/sec | 20 messages/min per group |
 
-## Character Limits
+**Common errors:**
+- `MEDIA_CAPTION_TOO_LONG` — caption exceeds 1,024 chars → reduce or move text to message body
+- `Bad Request: file is too big` — file exceeds 50 MB → compress or use a smaller file
 
-| Content Type | Limit |
-|-------------|-------|
-| Text message | 1,024 chars (bot API) or 4,096 chars (MTProto) |
-| Media caption | 1,024 chars (stricter than text-only) |
-
-## Supported Content
-
-| Type | Supported | Notes |
-|------|-----------|-------|
-| Text only | ✅ | With Markdown formatting |
-| Images | ✅ | JPEG; WebP auto-converted to JPEG |
-| Videos | ✅ | MP4 |
-| Markdown formatting | ✅ | See reference below |
-
-## Post to Telegram
+## Post a Text Message
 
 ```javascript
 await fetch('https://api.publora.com/api/v1/create-post', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json', 'x-publora-key': 'sk_YOUR_KEY' },
   body: JSON.stringify({
-    content: '**New release: v2.0** 🚀\n\nWe just shipped the biggest update yet. [Read the full changelog](https://example.com/changelog)',
-    platforms: ['telegram-CHAT_ID']
+    content: '📢 **Announcement**: Our new feature is live! Check it out at publora.com\n\n#update #publora',
+    platforms: ['telegram--1001234567890']  // note: group chat IDs are negative
   })
 });
 ```
 
-## Schedule a Post
+Markdown formatting is supported in Telegram messages.
+
+## Schedule a Message
 
 ```javascript
 body: JSON.stringify({
-  content: '**Weekly Digest** 📰\n\n_Top stories from this week..._',
-  platforms: ['telegram-CHAT_ID'],
-  scheduledTime: '2026-03-16T09:00:00.000Z'
+  content: 'Your Telegram channel message here',
+  platforms: ['telegram--1001234567890'],
+  scheduledTime: '2026-03-20T09:00:00.000Z'
 })
 ```
 
-## Post with Image
+## Send an Image
 
 ```python
 import requests
 
 HEADERS = { 'Content-Type': 'application/json', 'x-publora-key': 'sk_YOUR_KEY' }
 
-# Step 1: Create post
+# Step 1: Create post (content = caption, max 1,024 chars for media)
 post = requests.post('https://api.publora.com/api/v1/create-post', headers=HEADERS, json={
-    'content': '**New feature preview!** 👀\n\nHere is a first look at what we are shipping next week.',
-    'platforms': ['telegram-CHAT_ID']
+    'content': 'Check out our latest update! 🚀',   # keep under 1,024 chars when attaching media
+    'platforms': ['telegram--1001234567890']
 }).json()
-post_group_id = post['postGroupId']
 
-# Step 2: Get upload URL
+# Step 2: Get upload URL (max 10 MB per image)
 upload = requests.post('https://api.publora.com/api/v1/get-upload-url', headers=HEADERS, json={
-    'fileName': 'preview.jpg', 'contentType': 'image/jpeg',
-    'type': 'image', 'postGroupId': post_group_id
+    'postGroupId': post['postGroupId'],
+    'fileName': 'image.jpg',
+    'contentType': 'image/jpeg',
+    'type': 'image'
 }).json()
 
-# Step 3: Upload to S3 (caption limit: 1,024 chars)
-with open('preview.jpg', 'rb') as f:
+# Step 3: Upload
+with open('image.jpg', 'rb') as f:
     requests.put(upload['uploadUrl'], headers={'Content-Type': 'image/jpeg'}, data=f)
 ```
 
-**WebP note:** WebP images are automatically converted to JPEG by Publora.
+## Send a Video (max 50 MB)
 
-## Markdown Formatting Reference
+Same flow as image but use `contentType: 'video/mp4'` and `type: 'video'`. Keep the file under 50 MB.
 
-Telegram supports Markdown formatting in messages:
+## Platform Quirks
 
-| Syntax | Result |
-|--------|--------|
-| `**text**` | **Bold** |
-| `_text_` | _Italic_ |
-| `` `code` `` | `Inline code` |
-| ` ```code block``` ` | Code block |
-| `[text](url)` | [Hyperlink](url) |
-| `> text` | Blockquote |
-
-### Example with Formatting
-
-```python
-content = """**Product Update — March 2026** 🚀
-
-We shipped three major features this week:
-
-1. _Dark mode_ — finally!
-2. `API v2` — 3x faster
-3. [New docs site](https://docs.example.com) — completely rewritten
-
-> "The best software is the kind you don't have to think about." — our CTO
-
-```python
-# New SDK usage
-client = MySDK(api_key="sk_...")
-client.post("Hello, world!")
-```"""
-```
-
-## Security
-
-- Bot tokens are stored **securely** in Publora
-- Bot tokens are **never exposed** in API responses
-- Use the Publora dashboard to manage bot credentials — do not hardcode tokens in your application
-
-## Tips for Telegram
-
-- **Bot must be admin** — without admin rights, all posts fail
-- **Caption limit is stricter** — 1,024 chars for media captions vs text-only messages
-- **Markdown formatting works** — use bold, italic, code blocks, hyperlinks for rich messages
-- **WebP auto-converted** to JPEG
-- **Private channels** use numeric ID; public channels use `@channelname`
-- **Scheduling works** — use `scheduledTime` in ISO 8601 UTC
+- **Bot API file limit is 50 MB** — not 4 GB like Telegram user clients. For larger files, you'd need a Local Bot API Server (not supported by Publora)
+- **Caption vs message body**: When attaching media, `content` becomes the caption (max 1,024 chars). For text-only posts, content can be up to 4,096 chars.
+- **Markdown supported**: Use `**bold**`, `_italic_`, `` `code` ``, `[link](url)` in message content
+- **Group chat IDs are negative**: e.g. `telegram--1001234567890`
+- **Bot must be admin**: The bot needs admin permissions to post in channels; in groups, it needs at least "Send messages" permission
+- **Rate limit**: 30 messages/second globally; 20 messages/minute per group — Publora handles queuing automatically
