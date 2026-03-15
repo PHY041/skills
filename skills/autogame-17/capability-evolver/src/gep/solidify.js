@@ -136,6 +136,7 @@ function readOpenclawConstraintPolicy() {
       includeExtensions: Array.isArray(pol.includeExtensions) ? pol.includeExtensions.map(String) : defaults.includeExtensions,
     };
   } catch (_) {
+    console.warn('[evolver] readOpenclawConstraintPolicy failed:', _ && _.message || _);
     return defaults;
   }
 }
@@ -159,7 +160,9 @@ function matchAnyRegex(rel, regexList) {
   for (const raw of Array.isArray(regexList) ? regexList : []) {
     try {
       if (new RegExp(String(raw), 'i').test(rel)) return true;
-    } catch (_) {}
+    } catch (_) {
+      console.warn('[evolver] matchAnyRegex invalid pattern:', raw, _ && _.message || _);
+    }
   }
   return false;
 }
@@ -339,7 +342,9 @@ function checkConstraints({ gene, blast, blastRadiusEstimate, repoRoot }) {
         if (entries.length < 2) {
           warnings.push('incomplete_skill: skills/' + skillName + '/ has only ' + entries.length + ' file(s). New skills should have at least index.js + SKILL.md.');
         }
-      } catch (e) { /* dir might not exist yet */ }
+      } catch (e) {
+        console.warn('[evolver] checkConstraints skill dir read failed:', skillName, e && e.message || e);
+      }
     });
   }
 
@@ -381,7 +386,9 @@ function writeStateForSolidify(state) {
   const statePath = path.join(getEvolutionDir(), 'evolution_solidify_state.json');
   try {
     if (!fs.existsSync(memoryDir)) fs.mkdirSync(memoryDir, { recursive: true });
-  } catch {}
+  } catch (e) {
+    console.warn('[evolver] writeStateForSolidify mkdir failed:', memoryDir, e && e.message || e);
+  }
   const tmp = `${statePath}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + '\n', 'utf8');
   fs.renameSync(tmp, statePath);
@@ -559,7 +566,9 @@ function detectDestructiveChanges({ repoRoot, changedFiles, baselineUntracked })
           if (stat.isFile() && stat.size === 0) {
             violations.push(`CRITICAL_FILE_EMPTIED: ${norm}`);
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[evolver] detectDestructiveChanges stat failed:', norm, e && e.message || e);
+        }
       }
     }
   }
@@ -682,6 +691,7 @@ function rollbackTracked(repoRoot) {
     return;
   }
 
+  console.log('[Rollback] EVOLVER_ROLLBACK_MODE=hard, resetting tracked files in: ' + repoRoot);
   tryRunCmd('git restore --staged --worktree .', { cwd: repoRoot, timeoutMs: 60000 });
   tryRunCmd('git reset --hard', { cwd: repoRoot, timeoutMs: 60000 });
 }
@@ -715,7 +725,9 @@ function rollbackNewUntrackedFiles({ repoRoot, baselineUntracked }) {
         fs.unlinkSync(normAbs);
         deleted.push(safeRel);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[evolver] rollbackNewUntrackedFiles unlink failed:', safeRel, e && e.message || e);
+    }
   }
   if (skipped.length > 0) {
     console.log(`[Rollback] Skipped ${skipped.length} critical protected file(s): ${skipped.slice(0, 5).join(', ')}`);
@@ -748,7 +760,9 @@ function rollbackNewUntrackedFiles({ repoRoot, baselineUntracked }) {
         fs.rmdirSync(dirAbs);
         removedDirs.push(sortedDirs[si]);
       }
-    } catch (e) { /* ignore -- dir may already be gone */ }
+    } catch (e) {
+      console.warn('[evolver] rollbackNewUntrackedFiles rmdir failed:', sortedDirs[si], e && e.message || e);
+    }
   }
   if (removedDirs.length > 0) {
     console.log('[Rollback] Removed ' + removedDirs.length + ' empty director' + (removedDirs.length === 1 ? 'y' : 'ies') + ': ' + removedDirs.slice(0, 5).join(', '));
@@ -1225,7 +1239,9 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
         const list = require('./assetStore').loadCapsules();
         prevCapsule = Array.isArray(list) ? list.find(c => c && c.type === 'Capsule' && String(c.id) === selectedCapsuleId) : null;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[evolver] solidify loadCapsules failed:', e && e.message || e);
+    }
     const successReason = buildSuccessReason({ gene: geneUsed, signals, blast, mutation, score });
     const capsuleDiff = captureDiffSnapshot(repoRoot);
     const capsuleContent = buildCapsuleContent({ intent, gene: geneUsed, signals, blast, mutation, score });
@@ -1301,7 +1317,7 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
       applyEpigeneticMarks(geneUsed, envFp, outcomeStatus);
       upsertGene(geneUsed);
     } catch (e) {
-      // Non-blocking: epigenetic mark failure must not break solidify
+      console.warn('[evolver] applyEpigeneticMarks failed (non-blocking):', e && e.message || e);
     }
   }
 
@@ -1325,7 +1341,9 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
       if (personalityState) {
         updatePersonalityStats({ personalityState, outcome: outcomeStatus, score, notes: `event:${event.id}` });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[evolver] updatePersonalityStats failed:', e && e.message || e);
+    }
   }
 
   const runId = lastRun && lastRun.run_id ? String(lastRun.run_id) : stableHash(`${parentEventId || 'root'}|${geneId || 'none'}|${signalKey}`);
@@ -1540,8 +1558,34 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
     const resultAssetId = capsule && capsule.asset_id ? capsule.asset_id : (capsule && capsule.id ? capsule.id : null);
     if (resultAssetId) {
       const workerAssignmentId = lastRun.worker_assignment_id || null;
-      if (workerAssignmentId) {
-        // Worker Pool path: complete via /a2a/work/complete
+      const workerPending = lastRun.worker_pending || false;
+      if (workerPending && !workerAssignmentId) {
+        // Deferred claim mode: claim + complete atomically now that we have a result
+        try {
+          const { claimAndCompleteWorkerTask } = require('./taskReceiver');
+          const taskId = String(lastRun.active_task_id);
+          console.log(`[WorkerPool] Atomic claim+complete for task "${lastRun.active_task_title || taskId}" with asset ${resultAssetId}`);
+          const result = claimAndCompleteWorkerTask(taskId, resultAssetId);
+          if (result && typeof result.then === 'function') {
+            result
+              .then(function (r) {
+                if (r.ok) {
+                  console.log('[WorkerPool] Claim+complete succeeded, assignment=' + r.assignment_id);
+                } else {
+                  console.log('[WorkerPool] Claim+complete failed: ' + (r.error || 'unknown') + (r.assignment_id ? ' assignment=' + r.assignment_id : ''));
+                }
+              })
+              .catch(function (err) {
+                console.log('[WorkerPool] Claim+complete error (non-fatal): ' + (err && err.message ? err.message : err));
+              });
+          }
+          taskCompleteResult = { attempted: true, task_id: lastRun.active_task_id, asset_id: resultAssetId, worker: true, deferred: true };
+        } catch (e) {
+          console.log('[WorkerPool] Atomic claim+complete error (non-fatal): ' + e.message);
+          taskCompleteResult = { attempted: false, reason: e.message, worker: true, deferred: true };
+        }
+      } else if (workerAssignmentId) {
+        // Legacy path: already-claimed assignment, just complete it
         try {
           const { completeWorkerTask } = require('./taskReceiver');
           console.log(`[WorkerComplete] Completing worker assignment "${workerAssignmentId}" with asset ${resultAssetId}`);
@@ -1596,12 +1640,13 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
 
   // --- Auto Hub Review: rate fetched assets based on solidify outcome ---
   // When this cycle reused a Hub asset, submit a usage-verified review.
-  // Fire-and-forget: review submission must never block or affect solidify result.
+  // The promise is returned so callers can await it before process.exit().
   var hubReviewResult = null;
+  var hubReviewPromise = null;
   if (!dryRun && reusedAssetId && (sourceType === 'reused' || sourceType === 'reference')) {
     try {
       var { submitHubReview } = require('./hubReview');
-      var reviewPromise = submitHubReview({
+      hubReviewPromise = submitHubReview({
         reusedAssetId: reusedAssetId,
         sourceType: sourceType,
         outcome: event.outcome,
@@ -1611,23 +1656,25 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
         constraintCheck: constraintCheck,
         runId: lastRun && lastRun.run_id ? lastRun.run_id : null,
       });
-      if (reviewPromise && typeof reviewPromise.then === 'function') {
-        reviewPromise
+      if (hubReviewPromise && typeof hubReviewPromise.then === 'function') {
+        hubReviewPromise = hubReviewPromise
           .then(function (r) {
             hubReviewResult = r;
             if (r && r.submitted) {
               console.log('[HubReview] Review submitted successfully (rating=' + r.rating + ').');
             }
+            return r;
           })
           .catch(function (err) {
             console.log('[HubReview] Error (non-fatal): ' + (err && err.message ? err.message : err));
+            return null;
           });
       }
     } catch (e) {
       console.log('[HubReview] Error (non-fatal): ' + e.message);
     }
   }
-  return { ok: success, event, capsule, gene: geneUsed, constraintCheck, validation, validationReport, blast, publishResult, antiPatternPublishResult, taskCompleteResult, hubReviewResult };
+  return { ok: success, event, capsule, gene: geneUsed, constraintCheck, validation, validationReport, blast, publishResult, antiPatternPublishResult, taskCompleteResult, hubReviewResult, hubReviewPromise };
 }
 
 module.exports = {
