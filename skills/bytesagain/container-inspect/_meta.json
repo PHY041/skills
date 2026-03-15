@@ -1,0 +1,11 @@
+{
+  "owner": "bytesagain",
+  "slug": "container-inspect",
+  "displayName": "Container Inspect",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1773575482847,
+    "commit": null
+  },
+  "history": []
+}
