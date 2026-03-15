@@ -1,6 +1,6 @@
 {
   "name": "auto-redbook-content",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "小红书内容抓取与改写工具，支持图片识别和 OCR，输出本地 JSON 文件",
   "main": "scripts/fetch.js",
   "scripts": {
