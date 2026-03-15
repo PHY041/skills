@@ -136,6 +136,7 @@ function readOpenclawConstraintPolicy() {
       includeExtensions: Array.isArray(pol.includeExtensions) ? pol.includeExtensions.map(String) : defaults.includeExtensions,
     };
   } catch (_) {
+    console.warn('[evolver] readOpenclawConstraintPolicy failed:', _ && _.message || _);
     return defaults;
   }
 }
@@ -159,7 +160,9 @@ function matchAnyRegex(rel, regexList) {
   for (const raw of Array.isArray(regexList) ? regexList : []) {
     try {
       if (new RegExp(String(raw), 'i').test(rel)) return true;
-    } catch (_) {}
+    } catch (_) {
+      console.warn('[evolver] matchAnyRegex invalid pattern:', raw, _ && _.message || _);
+    }
   }
   return false;
 }
@@ -339,7 +342,9 @@ function checkConstraints({ gene, blast, blastRadiusEstimate, repoRoot }) {
         if (entries.length < 2) {
           warnings.push('incomplete_skill: skills/' + skillName + '/ has only ' + entries.length + ' file(s). New skills should have at least index.js + SKILL.md.');
         }
-      } catch (e) { /* dir might not exist yet */ }
+      } catch (e) {
+        console.warn('[evolver] checkConstraints skill dir read failed:', skillName, e && e.message || e);
+      }
     });
   }
 
@@ -381,7 +386,9 @@ function writeStateForSolidify(state) {
   const statePath = path.join(getEvolutionDir(), 'evolution_solidify_state.json');
   try {
     if (!fs.existsSync(memoryDir)) fs.mkdirSync(memoryDir, { recursive: true });
-  } catch {}
+  } catch (e) {
+    console.warn('[evolver] writeStateForSolidify mkdir failed:', memoryDir, e && e.message || e);
+  }
   const tmp = `${statePath}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + '\n', 'utf8');
   fs.renameSync(tmp, statePath);
@@ -559,7 +566,9 @@ function detectDestructiveChanges({ repoRoot, changedFiles, baselineUntracked })
           if (stat.isFile() && stat.size === 0) {
             violations.push(`CRITICAL_FILE_EMPTIED: ${norm}`);
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[evolver] detectDestructiveChanges stat failed:', norm, e && e.message || e);
+        }
       }
     }
   }
@@ -716,7 +725,9 @@ function rollbackNewUntrackedFiles({ repoRoot, baselineUntracked }) {
         fs.unlinkSync(normAbs);
         deleted.push(safeRel);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[evolver] rollbackNewUntrackedFiles unlink failed:', safeRel, e && e.message || e);
+    }
   }
   if (skipped.length > 0) {
     console.log(`[Rollback] Skipped ${skipped.length} critical protected file(s): ${skipped.slice(0, 5).join(', ')}`);
@@ -749,7 +760,9 @@ function rollbackNewUntrackedFiles({ repoRoot, baselineUntracked }) {
         fs.rmdirSync(dirAbs);
         removedDirs.push(sortedDirs[si]);
       }
-    } catch (e) { /* ignore -- dir may already be gone */ }
+    } catch (e) {
+      console.warn('[evolver] rollbackNewUntrackedFiles rmdir failed:', sortedDirs[si], e && e.message || e);
+    }
   }
   if (removedDirs.length > 0) {
     console.log('[Rollback] Removed ' + removedDirs.length + ' empty director' + (removedDirs.length === 1 ? 'y' : 'ies') + ': ' + removedDirs.slice(0, 5).join(', '));
@@ -1226,7 +1239,9 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
         const list = require('./assetStore').loadCapsules();
         prevCapsule = Array.isArray(list) ? list.find(c => c && c.type === 'Capsule' && String(c.id) === selectedCapsuleId) : null;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[evolver] solidify loadCapsules failed:', e && e.message || e);
+    }
     const successReason = buildSuccessReason({ gene: geneUsed, signals, blast, mutation, score });
     const capsuleDiff = captureDiffSnapshot(repoRoot);
     const capsuleContent = buildCapsuleContent({ intent, gene: geneUsed, signals, blast, mutation, score });
@@ -1302,7 +1317,7 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
       applyEpigeneticMarks(geneUsed, envFp, outcomeStatus);
       upsertGene(geneUsed);
     } catch (e) {
-      // Non-blocking: epigenetic mark failure must not break solidify
+      console.warn('[evolver] applyEpigeneticMarks failed (non-blocking):', e && e.message || e);
     }
   }
 
@@ -1326,7 +1341,9 @@ function solidify({ intent, summary, dryRun = false, rollbackOnFailure = true } 
       if (personalityState) {
         updatePersonalityStats({ personalityState, outcome: outcomeStatus, score, notes: `event:${event.id}` });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[evolver] updatePersonalityStats failed:', e && e.message || e);
+    }
   }
 
   const runId = lastRun && lastRun.run_id ? String(lastRun.run_id) : stableHash(`${parentEventId || 'root'}|${geneId || 'none'}|${signalKey}`);
