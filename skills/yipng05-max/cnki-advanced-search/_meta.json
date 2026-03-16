@@ -3,9 +3,15 @@
   "slug": "cnki-advanced-search",
   "displayName": "知网高级检索",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773211407875,
-    "commit": "https://github.com/openclaw/skills/commit/7a9b06c982006a2e7b75a61f42205b63d52c4bc1"
+    "version": "1.1.0",
+    "publishedAt": 1773672519869,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773211407875,
+      "commit": "https://github.com/openclaw/skills/commit/7a9b06c982006a2e7b75a61f42205b63d52c4bc1"
+    }
+  ]
 }
