@@ -43,9 +43,13 @@ except ImportError:
     yaml = None
 
 try:
-    from kalshi_python import KalshiClient
+    from kalshi_python_sync import Configuration as KalshiConfiguration, KalshiClient
 except ImportError:
-    KalshiClient = None
+    try:
+        from kalshi_python import Configuration as KalshiConfiguration, KalshiClient
+    except ImportError:
+        KalshiConfiguration = None
+        KalshiClient = None
 
 
 def log(msg, debug=False):
@@ -209,6 +213,56 @@ def format_xsignals_today_section(cache_path, config, debug=False):
         return "X SIGNALS TODAY: (none)"
 
 
+def format_scorecard_section(config, debug=False):
+    """Build a fail-loud month-to-date trading scorecard from the trade ledger."""
+    try:
+        script_dir = Path(__file__).resolve().parents[2] / "kalshalyst" / "scripts"
+        if str(script_dir) not in sys.path:
+            sys.path.insert(0, str(script_dir))
+        from trade_ledger import get_monthly_scorecard
+    except Exception as e:
+        log(f"Scorecard import error: {e}", debug)
+        return "P&L SCORECARD: I don't know (trade ledger unavailable)"
+
+    try:
+        scorecard = get_monthly_scorecard()
+    except Exception as e:
+        log(f"Scorecard build error: {e}", debug)
+        return f"P&L SCORECARD: I don't know ({str(e)[:60]})"
+
+    lines = [f"P&L SCORECARD ({scorecard['month']}):"]
+    lines.append(
+        f"Wins/Losses: {scorecard['wins']}W / {scorecard['losses']}L | "
+        f"Total P&L: ${scorecard['total_pnl']:+.2f}"
+    )
+
+    if scorecard["best_trade"]:
+        best = scorecard["best_trade"]
+        lines.append(
+            f"Best: {best.get('ticker', '?')} ${float(best.get('pnl', 0)):+.2f} | {best.get('title', '')[:36]}"
+        )
+    else:
+        lines.append("Best: I don't know yet (no resolved trades this month)")
+
+    if scorecard["worst_trade"]:
+        worst = scorecard["worst_trade"]
+        lines.append(
+            f"Worst: {worst.get('ticker', '?')} ${float(worst.get('pnl', 0)):+.2f} | {worst.get('title', '')[:36]}"
+        )
+    else:
+        lines.append("Worst: I don't know yet (no resolved trades this month)")
+
+    if scorecard["edge_accuracy_pct"] is not None:
+        lines.append(f"Edge accuracy: {scorecard['edge_accuracy_pct']:.1f}% this month")
+    else:
+        lines.append("Edge accuracy: I don't know yet (no resolved win/loss sample)")
+
+    lines.append(
+        f"Known sample: {scorecard['resolved_entries']} resolved, {scorecard['confirmed_entries']} confirmed fills"
+    )
+    return "\n".join(lines)
+
+
 def build_market_brief(config, kalshi=None, debug=False):
     """Build lightweight market-only evening brief."""
     now = datetime.now()
@@ -220,6 +274,9 @@ def build_market_brief(config, kalshi=None, debug=False):
     if config.get("include", {}).get("activity", True):
         activity = format_activity_section(kalshi, config, debug)
         sections.append(activity)
+
+    if config.get("include", {}).get("scorecard", True):
+        sections.append(format_scorecard_section(config, debug))
 
     # Overnight watch
     if config.get("include", {}).get("overnight_watch", True):
@@ -569,6 +626,7 @@ def load_config(config_path=None):
         },
         "include": {
             "activity": True,
+            "scorecard": True,
             "overnight_watch": True,
             "xpulse_signals_today": True,
         },
@@ -643,9 +701,13 @@ def main():
                 private_key_file = config["kalshi"].get("private_key_file")
 
                 if api_key_id and private_key_file:
+                    base_url = "https://api.elections.kalshi.com/trade-api/v2"
+                    sdk_config = KalshiConfiguration(host=base_url)
                     with open(private_key_file) as f:
-                        private_key = f.read()
-                    kalshi = KalshiClient(key_id=api_key_id, private_key=private_key)
+                        sdk_config.private_key_pem = f.read()
+                    sdk_config.api_key_id = api_key_id
+                    kalshi = KalshiClient(sdk_config)
+                    sdk_config.private_key_pem = None
                     log("Kalshi initialized", args.debug)
             except Exception as e:
                 log(f"Kalshi init error: {e}", args.debug)

@@ -3,9 +3,15 @@
   "slug": "market-morning-brief",
   "displayName": "Market Morning Brief",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773294012046,
-    "commit": "https://github.com/openclaw/skills/commit/a4463a8c288f9a411ea127fd161a877cf3b73994"
+    "version": "1.1.5",
+    "publishedAt": 1773531155053,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773294012046,
+      "commit": "https://github.com/openclaw/skills/commit/a4463a8c288f9a411ea127fd161a877cf3b73994"
+    }
+  ]
 }
