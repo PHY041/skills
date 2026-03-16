@@ -1,6 +1,7 @@
 ---
 name: lpxpoly
-description: AI-powered Polymarket prediction market analysis. Get edge opportunities, analyze specific markets, and set price alerts. Pay per analysis in Bitcoin sats via LightningProx.
+description: AI-powered Polymarket prediction market analysis via Bitcoin Lightning. Find mispriced markets, get AI edge on probability vs market price. ~50 sats per analysis.
+acceptLicenseTerms: true
 metadata:
   clawdbot:
     emoji: "📊"
@@ -10,98 +11,117 @@ metadata:
         - LIGHTNINGPROX_SPEND_TOKEN
 ---
 
-# LPXPoly — AI Polymarket Analysis
+# LPXPoly — AI-Powered Polymarket Analysis
 
-LPXPoly provides AI-powered analysis of Polymarket prediction markets. It identifies mispriced markets, calculates edge opportunities, and delivers actionable trading signals — paid per analysis in Bitcoin sats.
+Find edge in prediction markets using AI probability estimation vs current market prices. Pay ~50 sats per analysis via Bitcoin Lightning. No subscription, no account.
 
 ## When to Use
 
-Use LPXPoly when:
+- Finding mispriced markets on Polymarket
+- Getting AI probability assessment on specific events
+- Scanning for arbitrage opportunities in prediction markets
+- Comparing AI model probability vs crowd wisdom
+- Browsing top markets by volume or category
 
-- The user wants Polymarket market analysis or edge opportunities
-- The user asks about prediction market probabilities
-- The user wants to find mispriced markets on Polymarket
-- `LIGHTNINGPROX_SPEND_TOKEN` is configured and the user wants market analysis
+## Tools
 
-## Autonomous Agent Demo
+### `get_edge_opportunities`
+Scans Polymarket for markets where AI probability significantly diverges from market price.
 
-LPXPoly is part of the AIProx ecosystem — agents can discover and pay for market analysis autonomously.
-
-Watch an AI agent pay for intelligence:
-https://github.com/unixlamadev-spec/autonomous-agent-demo
-
-Register your agent in the open registry:
-
-```bash
-curl -X POST https://aiprox.dev/api/agents/register -H "Content-Type: application/json" -d '{"name":"your-agent","capability":"market-data","rail":"bitcoin-lightning","endpoint":"https://your-agent.com","price_per_call":30,"price_unit":"sats"}'
+```
+"Find edge opportunities on Polymarket"
+→ Returns top mispriced markets with AI vs market probability delta
+→ Sorted by edge magnitude
+→ Includes recommended position (YES/NO) and confidence
 ```
 
-Or use the web form: https://aiprox.dev/registry.html
+### `analyze_market`
+Deep AI analysis of a specific Polymarket market.
 
-## Usage Flow
-
-1. Check `LIGHTNINGPROX_SPEND_TOKEN` is set
-2. Check balance — warn if under 50 sats
-3. Call the appropriate LPXPoly endpoint
-4. Return clean analysis — never raw JSON
-
-## Get Edge Opportunities
-
-```bash
-curl -s -X POST "https://lpxpoly.com/api/analyze" \
-  -H "Content-Type: application/json" \
-  -H "X-Spend-Token: $LIGHTNINGPROX_SPEND_TOKEN" \
-  -d '{"type": "edge"}'
+```
+"Analyze the Fed rate cut market"
+→ Returns AI probability estimate with reasoning
+→ Includes key factors, risks, and recommended position size
+→ Compares to current market price
 ```
 
-Returns markets where the AI model disagrees with current market probability — potential trading opportunities.
+### `get_top_markets`
+Browse top Polymarket markets by volume, filtered by category.
 
-## Analyze Specific Market
-
-```bash
-curl -s -X POST "https://lpxpoly.com/api/analyze" \
-  -H "Content-Type: application/json" \
-  -H "X-Spend-Token: $LIGHTNINGPROX_SPEND_TOKEN" \
-  -d '{"type": "market", "query": "MARKET_QUESTION_HERE"}'
+```
+"What are the top crypto markets on Polymarket?"
+→ Returns markets sorted by volume
+→ Filter by: crypto, politics, sports, science, tech, world
 ```
 
-## Set Price Alert
+### `check_balance`
+Check your Lightning balance before running expensive scans.
 
-```bash
-curl -s -X POST "https://lpxpoly.com/api/alert" \
-  -H "Content-Type: application/json" \
-  -H "X-Spend-Token: $LIGHTNINGPROX_SPEND_TOKEN" \
-  -d '{"market": "MARKET_ID", "threshold": 0.65, "direction": "above"}'
+```
+"How much Lightning balance do I have?"
+→ Returns current sats balance
+→ Includes link to top up if low
 ```
 
-## Check Balance
+## Behavior Guidelines
 
-```bash
-curl -s "https://lightningprox.com/v1/balance" \
-  -H "X-Spend-Token: $LIGHTNINGPROX_SPEND_TOKEN"
+**Before a full market scan:**
+1. `check_balance` — confirm enough sats for the scan
+2. `get_edge_opportunities` — retrieve top mispriced markets
+3. Present findings with edge delta and confidence
+
+**For a specific market:**
+1. `analyze_market` with market name or URL
+2. Return AI probability, reasoning, and position recommendation
+
+**Cost awareness:**
+- Each `get_edge_opportunities` call: ~50 sats
+- Each `analyze_market` call: ~50 sats
+- Warn if balance < 200 sats before a multi-analysis session
+
+## Example Interactions
+
+**User:** "Find edge opportunities on Polymarket"
+
+**You:** check_balance → get_edge_opportunities → present top 5 markets with edge delta, AI probability vs market price, and recommended positions
+
+---
+
+**User:** "What does AI think about the Bitcoin ETF approval market?"
+
+**You:** analyze_market("Bitcoin ETF approval") → return AI probability estimate, key factors, comparison to market price, recommended position
+
+---
+
+**User:** "What are the biggest crypto prediction markets right now?"
+
+**You:** get_top_markets(category="crypto") → return top markets by volume with current prices
+
+## Payment
+
+~50 sats per analysis. Pay with Bitcoin Lightning. Get a spend token at [lightningprox.com](https://lightningprox.com).
+
+```json
+{
+  "mcpServers": {
+    "lpxpoly": {
+      "command": "npx",
+      "args": ["lpxpoly-mcp"],
+      "env": {
+        "LIGHTNINGPROX_SPEND_TOKEN": "lnpx_your_token_here"
+      }
+    }
+  }
+}
 ```
-
-## Trust Statement
-
-This skill routes requests through https://lpxpoly.com and https://lightningprox.com, both operated by LPX Digital Group LLC. Market analysis is AI-generated and not financial advice. Users should evaluate their own risk tolerance before trading.
 
 ## Security Manifest
 
-- Environment variables accessed: LIGHTNINGPROX_SPEND_TOKEN (only)
-- External endpoints called: https://lpxpoly.com/, https://lightningprox.com/ (only)
-- Local files read: none
-- Local files written: none
+| Permission | Scope | Reason |
+|------------|-------|--------|
+| Network | lpxpoly.com, lightningprox.com | Market data and Lightning payment |
+| Env Read | LIGHTNINGPROX_SPEND_TOKEN | Authentication for paid analysis calls |
 
-## Part of the AIProx Ecosystem
+## Trust Statement
 
-- AIProx Registry: https://aiprox.dev
-- LightningProx (Bitcoin Lightning rail): https://lightningprox.com
-- SolanaProx (Solana USDC rail): https://solanaprox.com
-- Autonomous agent demo: https://github.com/unixlamadev-spec/autonomous-agent-demo
-
-## Examples
-
-- "Find edge opportunities on Polymarket" → call edge endpoint, present top opportunities
-- "Analyze the market for Trump winning 2026 midterms" → call market endpoint with query
-- "Set an alert when the Fed rate cut market hits 70%" → call alert endpoint
-- "Check my LPXPoly balance" → check LightningProx balance
+LPXPoly is part of the AIProx ecosystem, operated by LPX Digital Group LLC. Market analysis is AI-generated probability estimation — not financial advice. Sats deducted from LightningProx balance per successful analysis only. Operated at lpxpoly.com.

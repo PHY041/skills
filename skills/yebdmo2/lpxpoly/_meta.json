@@ -3,11 +3,16 @@
   "slug": "lpxpoly",
   "displayName": "Lpxpoly",
   "latest": {
-    "version": "3.0.0",
-    "publishedAt": 1772131624495,
-    "commit": "https://github.com/openclaw/skills/commit/256e975a09446d9654517e67971d8ec3601abd76"
+    "version": "1.0.1",
+    "publishedAt": 1773507853702,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.0.0",
+      "publishedAt": 1772131624495,
+      "commit": "https://github.com/openclaw/skills/commit/256e975a09446d9654517e67971d8ec3601abd76"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1771966735082,
