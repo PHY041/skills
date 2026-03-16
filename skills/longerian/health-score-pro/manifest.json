@@ -1,6 +1,6 @@
 {
-  "name": "health-management",
-  "version": "1.0.9",
+  "name": "health-score-pro",
+  "version": "1.3.5",
   "author": "longerian",
   "description": "Comprehensive health management system integrating 10 best-selling health books' consensus principles. Use when users discuss nutrition, supplements, fitness, diet, anti-aging, anti-inflammation, longevity, or request diet tracking/analysis.",
   "permissions": {
@@ -11,11 +11,37 @@
       "web_search",
       "web_fetch"
     ],
-    "paths": [
+    "required_paths": [
       "~/.openclaw/workspace/memory/health-users/",
       "~/.openclaw/workspace/skills/health-management/",
       "~/Documents/health-backup/"
     ],
+    "required_env_vars": [
+      {
+        "name": "TIMEZONE",
+        "required": false,
+        "description": "User's timezone for proper date/time display in health records",
+        "default": "Asia/Shanghai"
+      },
+      {
+        "name": "LANGUAGE",
+        "required": false,
+        "description": "User's preferred language for all health reports and feedback",
+        "default": "zh-CN"
+      }
+    ],
+    "required_config_paths": [
+      "~/.openclaw/workspace/memory/health-users/{username}/profile.md",
+      "~/.openclaw/workspace/memory/health-users/{username}/daily/",
+      "~/.openclaw/workspace/memory/health-users/{username}/weekly/",
+      "~/.openclaw/workspace/memory/health-users/{username}/monthly/",
+      "~/.openclaw/workspace/memory/health-users/{username}/supplement-database.md",
+      "~/.openclaw/workspace/memory/health-users/backup_config.json"
+    ],
+    "git_config_access": {
+      "required_for": "GitHub backup functionality",
+      "description": "Backup scripts use system git configuration for authentication. This may read ~/.gitconfig (user.name, user.email) and use SSH keys from ~/.ssh/ for repository access"
+    },
     "executables": [
       "scripts/backup_health_data.sh",
       "scripts/check_git_config.sh",
@@ -26,7 +52,8 @@
     ],
     "domains": [
       "github.com",
-      "api.github.com"
+      "api.github.com",
+      "api.tavily.com"
     ],
     "capabilities": [
       "filesystem",
@@ -53,31 +80,38 @@
           "User can disable at any time",
           "All scripts are auditable (no obfuscated code)"
         ]
-      },
-      {
-        "name": "search",
-        "description": "Search for nutritional information and health research",
-        "trigger": "When analyzing food defense systems or nutritional content",
-        "implementation": "Tavily API (if configured) or web_search (Brave) fallback",
-        "api": "tavily (optional)"
       }
     ]
   },
   "rationale": {
     "exec": "Required to run backup scripts for data persistence and git configuration checks",
     "filesystem": "Store user health data in memory/health-users/{username}/ directory",
-    "network": "Search for nutritional information via Tavily API (if configured) or web_search (Brave) fallback to provide evidence-based recommendations. Backup to GitHub repository (user-provided) for data persistence",
+    "network": "Backup to GitHub repository (user-provided) for data persistence. Web search for nutritional research via OpenClaw's web_search tool",
     "scripts": "Automated backup system ensures data safety and supports multi-language/timezone features",
+    "required_env_vars": {
+      "TIMEZONE": "User's timezone for proper date/time display in health records",
+      "LANGUAGE": "User's preferred language for all health reports and feedback"
+    },
+    "required_config_paths": "Per-user health profiles, daily records, and supplement database for personalized tracking",
     "external_actions": {
-      "backup": "Users can backup their health tracking data to GitHub for persistence across sessions",
-      "search": "Scientific research lookup ensures health recommendations are evidence-based. Tavily API is optional - falls back to web_search (Brave) if not configured"
+      "backup": "Users can backup their health tracking data to GitHub for persistence across sessions"
     }
   },
   "security_notes": {
     "data_privacy": "User health data stored locally in memory/health-users/{username}/ - only accessible by the user",
     "no_exfiltration": "Scripts only write to local files and user's own GitHub repository (user provides repo URL)",
-    "api_keys": "Tavily API key optional (fallback to web_search) - stored in OpenClaw config, not in skill. Git credentials managed by user's system (SSH/credential manager)",
+    "api_keys": "No external API keys required. web_search and web_fetch are OpenClaw built-in tools managed by the platform. Git credentials managed by user's system (SSH/credential manager) for optional backup feature",
     "scripts_review": "All scripts are readable and auditable - no obfuscated code",
-    "github_backup": "Backup feature requires user to provide their own GitHub repository (recommended: private repo). All data transmission is user-controlled"
-  }
+    "github_backup": "Backup feature requires user to provide their own GitHub repository (recommended: private repo). All data transmission is user-controlled",
+    "network_access": "Network access is for: (1) GitHub backup (user-controlled, optional), (2) web_search/web_fetch built-in tools (platform-managed, supports Brave by default, optionally Tavily if configured)",
+    "audit_recommendation": "Users should review all scripts in scripts/ directory before enabling backup. Test with non-sensitive data first. Use private repository for backup."
+  },
+  "user_safety_checklist": [
+    "Review scripts/ directory before enabling backup",
+    "Use private GitHub repository for backup",
+    "Test with non-sensitive data first",
+    "Verify Tavily API usage (optional)",
+    "Understand data is stored locally by default",
+    "Backup is opt-in (disabled by default)"
+  ]
 }

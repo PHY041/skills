@@ -1,8 +1,7 @@
 ---
-name: health-management
-version: 1.0.9
+name: health-score-pro
+version: 1.3.3
 description: Comprehensive health management system integrating 10 best-selling health books' consensus principles. Use when users discuss nutrition, supplements, fitness, diet, anti-aging, anti-inflammation, longevity, or request diet tracking/analysis. Supports (1) Daily diet recording with 3-dimension scoring (Greger's Daily Dozen, Li's 5×5×5, consensus checklist), (2) Weekly/monthly/yearly analysis with trend identification, (3) Food defense system identification (angiogenesis, regeneration, microbiome, DNA protection, immunity), (4) Personalized improvement recommendations based on data patterns.
-manifest: manifest.json
 author: longerian
 metadata:
   openclaw:
@@ -12,7 +11,6 @@ metadata:
     scripts_auditable: true
     data_local_only: true
     optional_dependencies: []
-
 ---
 
 # Health Management Skill
@@ -549,29 +547,28 @@ success_msg=$(get_localized_text "backup.success" "$language")
 - ✅ **强烈建议使用私有仓库**
 - ✅ 用户可随时禁用备份
 
-**备份触发**：
-- ✅ 仅在用户配置 GitHub 仓库后才会执行备份
-- ✅ 用户未配置时，数据仅保存在本地
-- ✅ 用户可在 `backup_config.json` 中控制备份行为
+**备份触发条件**（必须全部满足）：
+1. ✅ 用户在 onboarding 时选择启用备份
+2. ✅ 用户提供了 GitHub 仓库 URL
+3. ✅ `backup_config.json` 存在且 `enabled: true`
+4. ✅ 用户刚记录了健康数据（饮食/补剂/运动/睡眠）
 
-### 备份触发条件
-
-**仅在以下情况触发备份**：
-1. ✅ 用户已明确配置 GitHub 备份（在 profile.md 中设置）
-2. ✅ 用户主动请求数据更新
-3. ✅ 用户手动触发备份命令
-
-**❌ 不会自动触发备份**：
-- ❌ 不会在后台自动执行
-- ❌ 不会在用户未配置时执行
-- ❌ 不会在用户明确禁用时执行
-
-### 启用备份（可选）
-
-**用户想启用备份时**：
+**配置文件**：`memory/health-users/backup_config.json`
+```json
+{
+  "enabled": true,
+  "repo_path": "/Users/xxx/Documents/health-backup",
+  "repo_url": "git@github.com:xxx/health-backup.git",
+  "branch": "main",
+  "auto_backup": true,
+  "created_at": "2026-03-16T10:00:00+08:00",
+  "last_backup_time": "2026-03-16T10:00:00+08:00"
+}
 ```
-用户：我想启用 GitHub 备份
-AI：
+
+**❌ 任何条件不满足时**：
+- ❌ 不执行备份
+- ✅ 数据仅保存在本地
 1. 询问 GitHub 仓库 URL
 2. 提醒使用私有仓库（重要！）
 3. 配置 backup_config.json
@@ -883,6 +880,118 @@ Example:
 ```
 "马齿苋 → 微生物组(M) + 血管生成(A) + 免疫(I)"
 ```
+
+---
+
+## 🍎 发酵食品知识库（CRITICAL）
+
+### ⚠️ 重要：发酵食品不含糖分
+
+**发酵过程会消耗糖分**：
+1. **第一步**：糖分 → 酒精（酵母发酵）
+2. **第二步**：酒精 → 醋酸（醋酸菌发酵）
+3. **结果**：发酵完成后，**几乎不含糖分** ✅
+
+---
+
+### 苹果醋（Apple Cider Vinegar）
+
+**制作过程**：
+```
+新鲜苹果汁 → 酒精发酵 → 醋酸发酵 → 苹果醋
+（含果糖）   （糖→酒精）  （酒精→醋酸）  （不含果糖）
+```
+
+**主要成分**：
+- 醋酸（Acetic Acid）：主要成分，提供酸味 ✅
+- 水
+- 微量矿物质
+- **几乎不含糖分（包括果糖）** ✅
+
+**健康效益**：
+
+| 效益 | 说明 | 证据等级 |
+|------|------|---------|
+| ✅ **降低血糖峰值** | 醋酸减缓胃排空，降低餐后血糖 | ⭐⭐⭐⭐⭐ 强证据 |
+| ✅ **提高胰岛素敏感性** | 改善胰岛素抵抗，有助于血糖控制 | ⭐⭐⭐⭐⭐ 强证据 |
+| ✅ **尿酸友好** | 不含果糖，不会升高尿酸 | ⭐⭐⭐⭐⭐ 强证据 |
+| ✅ **促进消化** | 有助于胃酸分泌，改善消化 | ⭐⭐⭐⭐ 良好证据 |
+| ✅ **微生物组友好** | 含有益生菌代谢产物 | ⭐⭐⭐⭐ 良好证据 |
+
+**血糖控制机制**：
+1. **减缓胃排空**：醋酸延缓食物从胃到小肠的移动
+2. **抑制淀粉酶**：减少淀粉分解为葡萄糖
+3. **提高肌肉葡萄糖摄取**：增强胰岛素敏感性
+
+**推荐用法**：
+- **餐前饮用**：1-2汤匙苹果醋 + 1杯水（餐前5-10分钟）
+- **降低血糖峰值**：显著降低餐后血糖峰值20-30%
+- **尿酸控制**：不含果糖，安全饮用
+
+**⚠️ 注意事项**：
+- 稀释饮用（避免损伤食道）
+- 不宜空腹大量饮用
+- 选择未过滤、含"母亲"（mother）的有机苹果醋
+
+**尿酸控制友好度**：⭐⭐⭐⭐⭐（不含果糖，安全）
+
+---
+
+### 其他发酵食品
+
+**发酵食品的共同特点**：
+- ✅ **糖分被消耗**：发酵过程消耗糖分
+- ✅ **含益生菌**：有助于肠道健康
+- ✅ **提高营养价值**：发酵增加维生素和矿物质吸收
+- ✅ **降低抗营养因子**：发酵分解植酸等抗营养因子
+
+**常见发酵食品**：
+
+| 食品 | 发酵类型 | 糖分含量 | 健康效益 |
+|------|---------|---------|---------|
+| 酸奶 | 乳酸发酵 | 低（乳糖部分分解） | ✅ 益生菌、钙、蛋白质 |
+| 开菲尔 | 乳酸+酵母发酵 | 低（乳糖大部分分解） | ✅ 益生菌、维生素K2 |
+| 泡菜 | 乳酸发酵 | 低 | ✅ 益生菌、维生素C |
+| 纳豆 | 枯草杆菌发酵 | 低 | ✅ 维生素K2、纳豆激酶 |
+| 味噌 | 霉菌+细菌发酵 | 低 | ✅ 益生菌、抗氧化物 |
+| 苹果醋 | 醋酸发酵 | **极低（几乎无）** | ✅ 降血糖、尿酸友好 |
+| 红茶菌（Kombucha） | 醋酸+乳酸发酵 | 低-中（取决于发酵时间） | ✅ 益生菌、抗氧化物 |
+
+**⚠️ 注意**：
+- 红茶菌（Kombucha）的糖分含量取决于发酵时间
+- 发酵时间越长，糖分越低
+- 选择发酵时间长的红茶菌（糖分更低）
+
+---
+
+### AI 输出规范（CRITICAL）
+
+**⚠️ 关于发酵食品和糖分的输出规范**：
+
+**❌ 绝对禁止**：
+- ❌ 说"苹果醋含果糖"
+- ❌ 说"发酵食品含糖"
+- ❌ 建议用白开水替代苹果醋（因为果糖）
+
+**✅ 正确输出**：
+- ✅ "苹果醋不含果糖（发酵过程已消耗）"
+- ✅ "苹果醋有助于降低血糖峰值"
+- ✅ "苹果醋是尿酸友好饮品"
+- ✅ "发酵食品糖分低（发酵过程消耗糖分）"
+
+**示例**：
+```
+❌ 错误：苹果醋含果糖，不利于尿酸控制
+✅ 正确：苹果醋不含果糖，有助于血糖控制，尿酸友好
+
+❌ 错误：建议用白开水替代苹果醋（因为果糖）
+✅ 正确：苹果醋是健康饮品，可以继续饮用
+
+❌ 错误：发酵食品含糖，需限制
+✅ 正确：发酵食品糖分低，有益健康
+```
+
+---
 
 **Example workflow:**
 

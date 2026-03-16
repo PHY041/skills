@@ -34,6 +34,38 @@
 
 This skill follows the [ClawHub Security Framework](https://github.com/openclaw/openclaw/issues/10890).
 
+### 🔍 Script Audit Guide
+
+**Before enabling backup, review the scripts**:
+
+1. **Check all scripts** (all are readable Bash, no obfuscation):
+   ```bash
+   # Review backup scripts
+   cat ~/.openclaw/workspace/skills/health-management/scripts/backup_health_data.sh
+   cat ~/.openclaw/workspace/skills/health-management/scripts/configure_backup.sh
+   cat ~/.openclaw/workspace/skills/health-management/scripts/manage_backup.sh
+   ```
+
+2. **What to look for**:
+   - ✅ Only writes to declared paths (`~/Documents/health-backup/`)
+   - ✅ Only accesses GitHub (no other external servers)
+   - ✅ No credential exfiltration
+   - ✅ No obfuscated code
+
+3. **Verify network calls**:
+   ```bash
+   # Check for network calls
+   grep -r "curl\|wget\|nc" scripts/
+   
+   # Should only show GitHub API calls
+   ```
+
+4. **Test with non-sensitive data first**:
+   - Create a test repository
+   - Record generic food items
+   - Verify backup to your repo
+   - Check commit history
+
 ### Declared Permissions
 
 See [manifest.json](./manifest.json) for full permission declaration.
@@ -42,7 +74,7 @@ See [manifest.json](./manifest.json) for full permission declaration.
 - **Tools**: exec, read, write, web_search, web_fetch
 - **Paths**: User health data directory, skill directory, backup directory
 - **Scripts**: 6 shell scripts for backup, language, and timezone utilities
-- **Network**: Tavily API for nutritional research
+- **Network**: Web search for nutritional research (via OpenClaw's web_search tool, supports Brave and optionally Tavily)
 - **Capabilities**: filesystem, network
 
 ### Security Guarantees
@@ -91,11 +123,7 @@ The skill will guide you through first-time setup:
 
 ### 2. API Keys (Optional)
 
-For nutritional research features, configure Tavily API:
-
-```bash
-openclaw config set skills.tavily-search.apiKey YOUR_API_KEY
-```
+For enhanced nutritional research features, you can optionally configure search APIs through OpenClaw's config system. The skill will use web_search (Brave) by default, which requires no additional configuration.
 
 ## Usage
 

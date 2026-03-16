@@ -20,32 +20,45 @@ source "$SCRIPT_DIR/language_utils.sh"
 WORKSPACE_ROOT="$HOME/.openclaw/workspace"
 HEALTH_DATA_SOURCE="$WORKSPACE_ROOT/memory/health-users"
 
-# 读取备份配置（动态路径）
-BACKUP_CONFIG="$WORKSPACE_ROOT/memory/health-users/.backup_config"
-if [ -f "$BACKUP_CONFIG" ]; then
-    source "$BACKUP_CONFIG"
-    BACKUP_REPO="$BACKUP_REPO_PATH"
-    
-    # 检查是否启用备份
-    if [ "$BACKUP_ENABLED" != "true" ]; then
-        echo "⚠️  自动备份已暂停，跳过备份"
-        echo "   恢复备份：bash scripts/manage_backup.sh resume"
-        exit 0
-    fi
-else
-    # 未配置备份，使用默认路径（向后兼容）
-    BACKUP_REPO="$HOME/Documents/health-data-backup"
-    
-    # 检查默认路径是否存在
-    if [ ! -d "$BACKUP_REPO/.git" ]; then
-        echo "⚠️  未配置备份功能，跳过备份"
-        echo "   配置备份：bash scripts/configure_backup.sh"
-        exit 0
-    fi
+# 读取备份配置（JSON 格式）
+BACKUP_CONFIG="$HEALTH_DATA_SOURCE/backup_config.json"
+
+if [ ! -f "$BACKUP_CONFIG" ]; then
+    echo "ℹ️  备份未配置，数据仅保存在本地"
+    echo "   配置备份：健康助手 启用备份"
+    exit 0
+fi
+
+# 读取 JSON 配置
+ENABLED=$(jq -r '.enabled' "$BACKUP_CONFIG" 2>/dev/null)
+BACKUP_REPO=$(jq -r '.repo_path' "$BACKUP_CONFIG" 2>/dev/null)
+BACKUP_REMOTE_URL=$(jq -r '.repo_url' "$BACKUP_CONFIG" 2>/dev/null)
+BRANCH=$(jq -r '.branch' "$BACKUP_CONFIG" 2>/dev/null)
+
+# 检查是否启用备份
+if [ "$ENABLED" != "true" ]; then
+    echo "ℹ️  备份已禁用，数据仅保存在本地"
+    echo "   启用备份：健康助手 启用备份"
+    exit 0
+fi
+
+# 检查配置完整性
+if [ -z "$BACKUP_REPO" ] || [ -z "$BACKUP_REMOTE_URL" ]; then
+    echo "❌ 备份配置不完整，请重新配置"
+    echo "   配置备份：健康助手 启用备份"
+    exit 1
+fi
+
+# 设置默认分支
+if [ -z "$BRANCH" ] || [ "$BRANCH" = "null" ]; then
+    BRANCH="main"
 fi
 
 # 获取当前用户时间（使用用户配置的时区）
 CURRENT_TIME=$(get_formatted_time)
+
+# 获取用户语言（用于多语言输出）
+USER_LANGUAGE=$(get_user_language)
 
 # 获取用户语言（用于多语言输出）
 USER_LANGUAGE=$(get_user_language)

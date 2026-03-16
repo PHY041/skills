@@ -4,6 +4,30 @@
 
 This document explains all permissions requested by the Health Management skill and why each is necessary for its functionality.
 
+## 🔍 Pre-Installation Security Checklist
+
+**Before installing, please**:
+
+1. ✅ **Review all scripts** in `scripts/` directory
+   - All scripts are plain Bash (human-readable)
+   - No obfuscated code
+   - No binary executables
+
+2. ✅ **Understand data access**:
+   - Skill reads `memory/health-users/{username}/profile.md` for user preferences
+   - Skill reads `memory/health-users/{username}/daily/*.md` for health records
+   - Skill does NOT access other directories or system files
+
+3. ✅ **Verify backup destination**:
+   - Backup only goes to YOUR GitHub repository
+   - Repository URL is configured by YOU
+   - Strong recommendation: use PRIVATE repository
+
+4. ✅ **Test with non-sensitive data**:
+   - Record generic food items first
+   - Verify backup behavior
+   - Check commit history in your repo
+
 ## Requested Permissions
 
 ### 🔧 Tools
@@ -28,7 +52,9 @@ This document explains all permissions requested by the Health Management skill 
 
 | Domain | Purpose |
 |--------|---------|
-| `api.tavily.com` | Search API for nutritional information and health research |
+| `github.com` | Backup repository (user-provided) |
+| `api.github.com` | GitHub API for repository operations |
+| `brave.com` | Search API (via OpenClaw's web_search) |
 
 ### 📜 Executable Scripts
 
@@ -69,14 +95,10 @@ All scripts are human-readable and auditable. No obfuscated code.
 ### 2. Search Action
 
 - **Name**: `search`
-- **Description**: Search for nutritional information using Tavily API
+- **Description**: Search for nutritional information using OpenClaw's web_search tool
 - **Trigger**: When analyzing food defense systems or nutritional content
-- **API**: Tavily Search API
-- **What it does**:
-  1. Searches for scientific research on food health benefits
-  2. Extracts defense system information (angiogenesis, regeneration, etc.)
-  3. Provides evidence-based recommendations
-- **Data flow**: Query → Tavily API → Structured results → Analysis
+- **Implementation**: web_search (Brave) - OpenClaw built-in tool
+- **Data flow**: Query → web_search → Structured results → Analysis
 
 ## Security Guarantees
 
@@ -97,7 +119,7 @@ All scripts are human-readable and auditable. No obfuscated code.
 
 ### ✅ API Key Security
 
-- Tavily API key stored in OpenClaw config (`~/.openclaw/openclaw.json`)
+- **Search API**: Uses OpenClaw's built-in web_search tool (no API key required)
 - NOT stored in skill directory
 - Skill references key from environment, never hardcodes it
 
@@ -121,7 +143,7 @@ Users can:
 
 1. **Review scripts** before execution
 2. **Decline backup** if they don't want GitHub sync
-3. **Disable network search** by not configuring Tavily API key
+3. **Disable web search** by not using search-related features
 4. **Inspect all data** stored in `memory/health-users/{username}/`
 5. **Delete data** at any time by removing the directory
 
@@ -148,7 +170,7 @@ If you have concerns about any permission:
 
 1. Review the scripts in `scripts/` directory
 2. Check your data in `memory/health-users/{username}/`
-3. Inspect network traffic (all calls to `api.tavily.com` are visible)
+3. Inspect network traffic (all network calls are visible in OpenClaw logs)
 4. Disable specific features by not configuring related settings
 
 ---
