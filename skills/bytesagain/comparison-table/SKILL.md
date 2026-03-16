@@ -1,28 +1,53 @@
 ---
+version: "2.0.0"
 name: comparison-table
-version: 1.0.0
-description: 产品对比表生成工具。Markdown/HTML对比表、技术选型、定价对比、功能矩阵、导出。Comparison table generator with Markdown/HTML output, tech comparison, pricing, feature matrix, export.
+description: "产品对比表生成工具。Markdown/HTML对比表、技术选型、定价对比、功能矩阵、导出。Comparison table generator with Markdown/HTML output, tech comparison, pricing, feature matrix, export. Use when you need comparison table capabilities. Triggers on: comparison table."
 author: BytesAgain
-tags: [comparison, table, product, tech, pricing, feature, matrix, 对比, 比较, 产品, 技术选型, 定价]
 ---
+# comparison-table
 
-# Comparison Table 产品对比表生成工具
+产品对比表生成工具。Markdown/HTML对比表、技术选型、定价对比、功能矩阵、导出。Comparison table generator with Markdown/HTML output, tech comparison, pricing, feature matrix, export.
 
-快速生成各种对比表格，支持 Markdown 和 HTML 输出。
+## 为什么选择这个工具
+
+- ✅ 专为中文用户设计，理解中国市场和文化
+- ✅ 多种命令覆盖不同场景需求
+- ✅ 输出实用、可直接使用的内容
+- ✅ 持续更新，紧跟行业最新趋势
+
+## 可用命令
+
+- **create** — create
+- **product** — product
+- **tech** — tech
+- **pricing** — pricing
+- **feature** — feature
+- **export** — export
+
+## 专业建议
+
+- 维度统一** — 所有选项用同样的维度评估
+- 数据可比** — 用相同单位和标准
+- 重点突出** — 关键差异用标记醒目显示
+- 简洁明了** — 维度不超过10个
+- ✅ 支持/有
+
+---
+*comparison-table by BytesAgain*
+---
+💬 Feedback & Feature Requests: https://bytesagain.com/feedback
+Powered by BytesAgain | bytesagain.com
+
+## Examples
+
+```bash
+# Show help
+comparison-table help
+
+# Run
+comparison-table run
+```
 
 ## Commands
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `create` | 自定义对比表 | `create React, Vue, Angular` |
-| `product` | 产品对比 | `product iPhone 15, Galaxy S24, Pixel 8` |
-| `tech` | 技术选型对比 | `tech PostgreSQL, MySQL, MongoDB` |
-| `pricing` | 定价方案对比 | `pricing 基础版, 专业版, 企业版` |
-| `feature` | 功能矩阵 | `feature Slack, Teams, Discord` |
-| `export` | 导出为HTML格式 | `export React, Vue, Angular` |
-
-## Usage
-
-```bash
-bash scripts/compare.sh <command> [args]
-```
+Run `comparison-table help` to see all available commands.

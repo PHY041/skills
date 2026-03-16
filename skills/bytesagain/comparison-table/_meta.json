@@ -1,11 +1,17 @@
 {
   "owner": "bytesagain",
   "slug": "comparison-table",
-  "displayName": "comparison-table",
+  "displayName": "Comparison Table",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773170279798,
-    "commit": "https://github.com/openclaw/skills/commit/9a72554f8229cc48a76609335a549543551fbf2b"
+    "version": "2.3.5",
+    "publishedAt": 1773665363230,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773170279798,
+      "commit": "https://github.com/openclaw/skills/commit/9a72554f8229cc48a76609335a549543551fbf2b"
+    }
+  ]
 }
