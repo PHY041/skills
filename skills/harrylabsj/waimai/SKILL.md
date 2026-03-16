@@ -1,32 +1,64 @@
 ---
 name: waimai
-description: Browser assistant for manually browsing Eleme merchants and menu items. Use when the user wants help opening Eleme, searching restaurants or dishes, reading menu options, or preparing a manual order flow in the browser. Keep login manual and stop before payment.
+description: Help users make better takeout decisions from public merchant and promotion information across delivery scenarios. Use when the user wants to compare takeout stores, judge whether delivery offers are worth it, understand threshold and fee trade-offs, or choose a better ordering option for one-person, two-person, or group meals.
 ---
 
 # Waimai
 
-Use this skill as a browser assistant for Eleme browsing and manual order preparation.
+Help users make better takeout ordering decisions from public merchant and promotion signals.
 
-## Safety Rules
+This is a low-sensitivity public skill. It focuses on public decision support and does not perform login, account access, cookie handling, order retrieval, coupon claiming, local database persistence, or browser automation runtime actions.
 
-- Keep login manual.
-- Stop before payment.
-- Do not request or store account passwords.
-- Only act on explicit user instructions.
+Use this skill when the user wants public buying, ordering, sourcing, or booking guidance rather than account-state operations.
 
-## Supported Help
+For live page inspection, account pages, checkout-state actions, or real-time retrieval that depends on login, switch to browser-based workflows instead of pretending this skill performs those actions directly.
 
-- open Eleme in the browser
-- wait for manual login
-- search merchants or dishes
-- inspect visible options such as size or flavor when available
-- help the user review the current selection before payment
+Read these references as needed:
+- `references/comparison-guide.md` for supporting guidance
+- `references/risk-signals.md` for supporting guidance
+- `references/output-patterns.md` for supporting guidance
 
-## Boundaries
+## Workflow
 
-This skill does not:
+1. Identify the user's shopping, ordering, or booking need.
+   - Accept a product, merchant, ride, store, or booking scenario.
+   - If the request is too broad, ask one short clarifying question.
 
-- make payment
-- bypass login or verification challenges
-- store account passwords
-- run hidden background ordering actions
+2. Focus on public decision-relevant factors.
+   - Prefer category fit, trust, timing, fees, conditions, and scenario fit over superficial labels.
+
+3. Explain trade-offs.
+   - Say why the strongest option fits.
+   - Mention meaningful risks or caveats.
+
+4. Give practical next-step advice.
+   - Tell the user what to verify before paying or placing an order.
+
+## Output
+
+Use this structure unless the user asks for something shorter:
+
+### Best Option
+State the strongest current choice.
+
+### Why
+List the main reasons.
+
+### Caveats
+List meaningful concerns or trade-offs.
+
+### Final Advice
+Give a direct practical suggestion.
+
+## Quality bar
+
+Do:
+- focus on public decision support
+- explain trade-offs clearly
+- stay honest about not doing account-state operations
+
+Do not:
+- pretend to log in
+- claim to retrieve orders, coupons, or account data
+- store cookies or user data
+- present heuristics as guaranteed outcomes
