@@ -1,11 +1,17 @@
 {
   "owner": "ckchzh",
   "slug": "shell-script",
-  "displayName": "Shell Script Helper",
+  "displayName": "Shell Script",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773206268582,
-    "commit": "https://github.com/openclaw/skills/commit/9c6364bfe0ace894cc8052cb60c3cda8eb6bdbea"
+    "version": "2.3.3",
+    "publishedAt": 1773666981052,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773206268582,
+      "commit": "https://github.com/openclaw/skills/commit/9c6364bfe0ace894cc8052cb60c3cda8eb6bdbea"
+    }
+  ]
 }
