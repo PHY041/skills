@@ -3,11 +3,16 @@
   "slug": "mini-crm",
   "displayName": "Mini Crm",
   "latest": {
-    "version": "1.0.44",
-    "publishedAt": 1773632028786,
-    "commit": "https://github.com/openclaw/skills/commit/a0f917e965607a80a196d3844008020db0656d3e"
+    "version": "1.1.0",
+    "publishedAt": 1773643729880,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.44",
+      "publishedAt": 1773632028786,
+      "commit": "https://github.com/openclaw/skills/commit/a0f917e965607a80a196d3844008020db0656d3e"
+    },
     {
       "version": "1.0.6",
       "publishedAt": 1773594184155,
