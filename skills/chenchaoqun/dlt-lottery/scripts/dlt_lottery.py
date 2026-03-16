@@ -5,9 +5,11 @@
 
 数据源优先级:
 1. https://www.lottery.gov.cn/kj/kjlb.html?dlt  (中国体彩网 - 官方)
-2. https://m.lottery.gov.cn/dlt/  (体彩网手机版 - 官方备用)
-3. https://www.500.com/dlt/  (500 彩票网 - 第三方)
-4. https://lottery.sina.com.cn/dlt/  (新浪彩票 - 第三方)
+2. https://zx.500.com/dlt/  (500 彩票网 - 第三方，新地址)
+3. https://m.china-lottery.cn/list/1000/  (中华彩讯 - 第三方)
+4. https://kaijiang.78500.cn/dlt/  (彩宝贝 - 第三方)
+5. https://www.cjcp.cn/kaijiang/dlt/  (彩经网 - 第三方)
+6. https://lottery.sina.com.cn/dlt/  (新浪彩票 - 第三方)
 
 Usage: python dlt_lottery.py [期号]
 Example: 
@@ -19,6 +21,7 @@ import sys
 import urllib.request
 import urllib.error
 import re
+import gzip
 from html import unescape
 
 
@@ -32,16 +35,30 @@ DATA_SOURCES = [
         'timeout': 15,
     },
     {
-        'name': '体彩网手机版',
-        'url_list': 'https://m.lottery.gov.cn/dlt/',
-        'url_issue': 'https://m.lottery.gov.cn/dlt/{issue}.html',
-        'priority': 'official_backup',
-        'timeout': 15,
+        'name': '500 彩票网',
+        'url_list': 'https://zx.500.com/dlt/',
+        'url_issue': 'https://zx.500.com/dlt/',  # 新地址不支持按期号查询，返回列表页
+        'priority': 'third_party',
+        'timeout': 10,
     },
     {
-        'name': '500 彩票网',
-        'url_list': 'https://www.500.com/dlt/',
-        'url_issue': 'https://www.500.com/dlt/kjgg/{issue}.shtml',
+        'name': '中华彩讯',
+        'url_list': 'https://m.china-lottery.cn/list/1000/',
+        'url_issue': 'https://m.china-lottery.cn/list/1000/',
+        'priority': 'third_party',
+        'timeout': 10,
+    },
+    {
+        'name': '彩宝贝',
+        'url_list': 'https://kaijiang.78500.cn/dlt/',
+        'url_issue': 'https://kaijiang.78500.cn/dlt/',
+        'priority': 'third_party',
+        'timeout': 10,
+    },
+    {
+        'name': '彩经网',
+        'url_list': 'https://www.cjcp.cn/kaijiang/dlt/',
+        'url_issue': 'https://www.cjcp.cn/kaijiang/dlt/',
         'priority': 'third_party',
         'timeout': 10,
     },
@@ -56,10 +73,12 @@ DATA_SOURCES = [
 
 # HTTP 请求头
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-    'Connection': 'close',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
 }
 
 
@@ -68,8 +87,30 @@ def fetch_lottery_page(url: str, timeout: int = 15) -> str:
     try:
         req = urllib.request.Request(url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=timeout) as response:
-            html = response.read().decode('utf-8')
-            if '404' in html or '无法访问' in html or '页面不存在' in html:
+            raw_html = response.read()
+            
+            # 处理 gzip 压缩
+            content_encoding = response.headers.get('Content-Encoding', '')
+            if 'gzip' in content_encoding:
+                try:
+                    raw_html = gzip.decompress(raw_html)
+                except:
+                    pass
+            
+            # 尝试多种编码
+            html = None
+            for encoding in ['gb2312', 'gbk', 'utf-8']:
+                try:
+                    html = raw_html.decode(encoding)
+                    break
+                except (UnicodeDecodeError, LookupError):
+                    continue
+            
+            if html is None:
+                html = raw_html.decode('utf-8', errors='ignore')
+            
+            # 检查是否是错误页面 (更精确的判断)
+            if response.status == 404 or ('无法访问' in html and '页面不存在' in html):
                 return f"ERROR:页面不存在 (404)"
             return html
     except urllib.error.HTTPError as e:
@@ -122,25 +163,48 @@ def parse_lottery_gov(html: str) -> dict:
 
 
 def parse_500(html: str) -> dict:
-    """解析 500 彩票网数据"""
+    """
+    解析 500 彩票网数据 (新地址：zx.500.com)
+    
+    新页面结构:
+    - 前区：<li class="redball">XX</li> (5 个)
+    - 后区：<li class="blueball">XX</li> (2 个)
+    - 期号：从开奖链接提取 (如 /dlt/n_dt/kj/20260225_*.shtml)
+    """
     result = {'issue': '', 'date': '', 'front': [], 'back': [], 'prize_pool': '', 'source': '500 彩票网'}
     html = unescape(html)
     
-    # 期号
-    match = re.search(r'第\s*(\d{7,8})\s*期', html)
-    if match:
-        result['issue'] = match.group(1)
+    # 移除 HTML 注释干扰
+    html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    
+    # 期号：从开奖链接提取 (最新一期)
+    # 格式：/dlt/n_dt/kj/20260225_699541.shtml
+    matches = re.findall(r'/dlt/n_dt/kj/(\d{8})_\d+\.shtml', html)
+    if matches:
+        # 取最大的期号（最新一期）
+        result['issue'] = max(matches)
     
     # 日期
     match = re.search(r'(\d{4}-\d{2}-\d{2})', html)
     if match:
         result['date'] = match.group(1)
     
-    # 号码 (500 网格式：前区 + 后区)
-    combo_match = re.search(r'(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})', html)
-    if combo_match:
-        result['front'] = list(combo_match.groups()[:5])
-        result['back'] = list(combo_match.groups()[5:7]) if len(combo_match.groups()) > 5 else []
+    # 前区：<li class="redball">XX</li>
+    front_matches = re.findall(r'class="redball">(\d{2})<', html)
+    if front_matches:
+        result['front'] = front_matches[:5]
+    
+    # 后区：<li class="blueball">XX</li>
+    back_matches = re.findall(r'class="blueball">(\d{2})<', html)
+    if back_matches:
+        result['back'] = back_matches[:2]
+    
+    # 如果上面的方法失败，回退到旧格式
+    if not result['front'] or not result['back']:
+        combo_match = re.search(r'(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})', html)
+        if combo_match:
+            result['front'] = list(combo_match.groups()[:5])
+            result['back'] = list(combo_match.groups()[5:7]) if len(combo_match.groups()) > 5 else []
     
     return result
 
@@ -169,6 +233,131 @@ def parse_sina(html: str) -> dict:
     return result
 
 
+def parse_china_lottery(html: str) -> dict:
+    """解析中华彩讯数据"""
+    result = {'issue': '', 'date': '', 'front': [], 'back': [], 'prize_pool': '', 'source': '中华彩讯'}
+    html = unescape(html)
+    
+    # 移除 HTML 注释 (中华彩讯有很多 <!----> 注释)
+    html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    
+    # 期号 - 匹配类似 "第 26025 期"
+    match = re.search(r'第\s*(\d{5,8})\s*期', html)
+    if match:
+        result['issue'] = match.group(1)
+    
+    # 日期 - 尝试多种格式
+    match = re.search(r'(\d{4}-\d{2}-\d{2})', html)
+    if match:
+        result['date'] = match.group(1)
+    else:
+        # 尝试匹配 YY-MM-DD 格式 (如 26-03-11)
+        match = re.search(r'(\d{2})-(\d{2})-(\d{2})', html)
+        if match:
+            result['date'] = f"20{match.group(1)}-{match.group(2)}-{match.group(3)}"
+    
+    # 前区号码 - 先定位到 header-item card-ball 区块，再提取前 5 个 em 标签
+    # 格式：<div class="header-item card-ball ..."><div><em> 03</em><em> 15</em>...
+    ball_section = re.search(r'class="header-item\s+card-ball[^"]*"[^>]*>.*?<div>(.*?)</div>', html, re.DOTALL)
+    if ball_section:
+        section = ball_section.group(1)
+        # 提取不含 class="blue-ball" 的 em 标签中的号码
+        front_matches = re.findall(r'<em(?![^>]*class="blue-ball")[^>]*>\s*(\d{2})\s*</em>', section)
+        result['front'] = front_matches[:5]
+    
+    # 后区号码 - 匹配 class="blue-ball" 的 em 标签
+    back_matches = re.findall(r'<em\s+class="blue-ball"[^>]*>\s*(\d{2})\s*</em>', html)
+    if back_matches:
+        result['back'] = back_matches[:2]
+    
+    # 奖池
+    pool_match = re.search(r'奖池.*?(\d[,\d\.]+)\s*亿', html)
+    if pool_match:
+        result['prize_pool'] = pool_match.group(1) + '亿'
+    
+    return result
+
+
+def parse_78500(html: str) -> dict:
+    """解析彩宝贝数据"""
+    result = {'issue': '', 'date': '', 'front': [], 'back': [], 'prize_pool': '', 'source': '彩宝贝'}
+    html = unescape(html)
+    
+    # 移除 HTML 注释
+    html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    
+    # 期号
+    match = re.search(r'第\s*(\d{5,8})\s*期', html)
+    if match:
+        result['issue'] = match.group(1)
+    
+    # 日期
+    match = re.search(r'(\d{4}[-/年]\d{1,2}[-/月]\d{1,2})', html)
+    if match:
+        result['date'] = match.group(1).replace('年', '-').replace('月', '-').replace('日', '')
+    
+    # 号码 - 彩宝贝通常有明确的红球/蓝球标识
+    # 尝试匹配 class 包含"red"或"ball"的元素
+    front_matches = re.findall(r'class="[^"]*red[^"]*"[^>]*>\s*(\d{2})\s*<', html, re.IGNORECASE)
+    back_matches = re.findall(r'class="[^"]*blue[^"]*"[^>]*>\s*(\d{2})\s*<', html, re.IGNORECASE)
+    
+    if front_matches and back_matches:
+        result['front'] = front_matches[:5]
+        result['back'] = back_matches[:2]
+    else:
+        # 回退到通用匹配 - 找连续的 7 个两位数
+        combo_match = re.search(r'(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})', html)
+        if combo_match:
+            result['front'] = list(combo_match.groups()[:5])
+            result['back'] = list(combo_match.groups()[5:7])
+        else:
+            numbers = re.findall(r'\b(\d{2})\b', html)
+            if len(numbers) >= 7:
+                result['front'] = sorted(set(numbers[:5]), key=lambda x: int(x))
+                result['back'] = numbers[5:7]
+    
+    return result
+
+
+def parse_cjcp(html: str) -> dict:
+    """解析彩经网数据"""
+    result = {'issue': '', 'date': '', 'front': [], 'back': [], 'prize_pool': '', 'source': '彩经网'}
+    html = unescape(html)
+    
+    # 移除 HTML 注释
+    html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    
+    # 期号
+    match = re.search(r'第\s*(\d{5,8})\s*期', html)
+    if match:
+        result['issue'] = match.group(1)
+    
+    # 日期
+    match = re.search(r'(\d{4}[-/年]\d{1,2}[-/月]\d{1,2})', html)
+    if match:
+        result['date'] = match.group(1).replace('年', '-').replace('月', '-').replace('日', '')
+    
+    # 号码 - 彩经网通常有表格格式
+    # 尝试匹配表格中的号码
+    table_matches = re.findall(r'<td[^>]*>\s*(\d{2})\s*</td>', html)
+    if len(table_matches) >= 7:
+        result['front'] = table_matches[:5]
+        result['back'] = table_matches[5:7]
+    else:
+        # 回退到通用匹配 - 找连续的 7 个两位数
+        combo_match = re.search(r'(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})', html)
+        if combo_match:
+            result['front'] = list(combo_match.groups()[:5])
+            result['back'] = list(combo_match.groups()[5:7])
+        else:
+            numbers = re.findall(r'\b(\d{2})\b', html)
+            if len(numbers) >= 7:
+                result['front'] = sorted(set(numbers[:5]), key=lambda x: int(x))
+                result['back'] = numbers[5:7]
+    
+    return result
+
+
 def parse_draw(html: str, source_name: str) -> dict:
     """根据数据源选择解析器"""
     if 'lottery.gov.cn' in source_name.lower() or '体彩' in source_name:
@@ -177,6 +366,12 @@ def parse_draw(html: str, source_name: str) -> dict:
         return parse_500(html)
     elif 'sina' in source_name or '新浪' in source_name:
         return parse_sina(html)
+    elif 'china-lottery' in source_name or '中华彩讯' in source_name:
+        return parse_china_lottery(html)
+    elif '78500' in source_name or '彩宝贝' in source_name:
+        return parse_78500(html)
+    elif 'cjcp' in source_name or '彩经网' in source_name:
+        return parse_cjcp(html)
     else:
         return parse_lottery_gov(html)
 
@@ -232,7 +427,7 @@ def format_draw(draw: dict) -> str:
     
     # 数据来源
     if draw.get('source'):
-        source_type = "官方" if draw['source'] in ['中国体彩网', '体彩网手机版'] else "第三方"
+        source_type = "官方" if draw['source'] == '中国体彩网' else "第三方"
         lines.append(f"📊 数据来源：{draw['source']} ({source_type})")
     
     # 检查数据完整性
@@ -252,7 +447,7 @@ def format_draw(draw: dict) -> str:
         lines.append("   九等奖：3 前/2 前 +1 后/1 前 +2 后/0 前 +2 后")
         
         # 第三方数据源提示
-        if draw.get('source') not in ['中国体彩网', '体彩网手机版']:
+        if draw.get('source') != '中国体彩网':
             lines.append("")
             lines.append("⚠️ 提示：第三方数据仅供参考，请以官网为准")
     

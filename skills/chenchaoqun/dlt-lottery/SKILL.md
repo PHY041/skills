@@ -1,11 +1,11 @@
 ---
 name: dlt-lottery
-description: 查询中国体育彩票大乐透开奖结果。支持多数据源自动切换，优先官方渠道。Use when: 用户询问大乐透开奖结果、中奖号码、彩票查询、对奖等场景。
+description: 查询中国体育彩票大乐透开奖结果。支持 6 个数据源自动切换，优先官方渠道，提升获取稳定性。Use when: 用户询问大乐透开奖结果、中奖号码、彩票查询、对奖等场景。
 ---
 
 # 大乐透开奖查询技能 (多数据源版)
 
-从中国体彩网获取官方大乐透开奖数据，支持多个数据源自动切换，提供开奖结果查询和中奖规则说明。
+从中国体彩网获取官方大乐透开奖数据，支持 6 个数据源自动切换，提供开奖结果查询和中奖规则说明。
 
 ## 何时使用
 
@@ -52,9 +52,10 @@ python scripts/dlt_lottery.py 2026025
 | 渠道 | 网址 | 优先级 |
 |------|------|--------|
 | 中国体彩网 | https://www.lottery.gov.cn | ⭐⭐⭐ 官方 |
-| 开奖公告 | https://www.lottery.gov.cn/kj/kjlb.html?dlt | ⭐⭐⭐ 官方 |
-| 体彩网手机版 | https://m.lottery.gov.cn/dlt/ | ⭐⭐ 官方备用 |
-| 500 彩票网 | https://www.500.com/dlt/ | ⭐ 第三方 |
+| 500 彩票网 | https://www.500.com/dlt/ | ⭐⭐ 第三方 |
+| 中华彩讯 | https://m.china-lottery.cn/list/1000/ | ⭐⭐ 第三方 |
+| 彩宝贝 | https://kaijiang.78500.cn/dlt/ | ⭐ 第三方 |
+| 彩经网 | https://www.cjcp.cn/kaijiang/dlt/ | ⭐ 第三方 |
 | 新浪彩票 | https://lottery.sina.com.cn/dlt/ | ⭐ 第三方 |
 
 ## 数据源策略
@@ -64,19 +65,23 @@ python scripts/dlt_lottery.py 2026025
 ```
 1. https://www.lottery.gov.cn/kj/kjlb.html?dlt  (中国体彩网 - 官方)
    ↓ 失败
-2. https://m.lottery.gov.cn/dlt/  (体彩网手机版 - 官方备用)
+2. https://www.500.com/dlt/  (500 彩票网 - 第三方)
    ↓ 失败
-3. https://www.500.com/dlt/  (500 彩票网 - 第三方)
+3. https://m.china-lottery.cn/list/1000/  (中华彩讯 - 第三方)
    ↓ 失败
-4. https://lottery.sina.com.cn/dlt/  (新浪彩票 - 第三方)
+4. https://kaijiang.78500.cn/dlt/  (彩宝贝 - 第三方)
+   ↓ 失败
+5. https://www.cjcp.cn/kaijiang/dlt/  (彩经网 - 第三方)
+   ↓ 失败
+6. https://lottery.sina.com.cn/dlt/  (新浪彩票 - 第三方)
 ```
 
 ### 自动切换逻辑
 
 1. **首选官方渠道**：中国体彩网 (lottery.gov.cn)
-2. **官方渠道失败**：尝试手机版 (m.lottery.gov.cn)
-3. **官方全部失败**：使用第三方数据源
-4. **数据校验**：交叉验证多个数据源确保准确性
+2. **官方渠道失败**：依次尝试第三方数据源（500 彩票网→中华彩讯→彩宝贝→彩经网→新浪彩票）
+3. **数据校验**：检查数据完整性（期号、5 个前区 +2 个后区号码）
+4. **来源标注**：第三方数据源会在输出中标注"仅供参考"
 
 ## 大乐透规则
 

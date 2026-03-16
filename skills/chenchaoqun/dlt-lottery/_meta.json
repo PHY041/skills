@@ -1,13 +1,18 @@
 {
   "owner": "chenchaoqun",
   "slug": "dlt-lottery",
-  "displayName": "Dlt Lottery",
+  "displayName": "大乐透开奖查询",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773083036197,
-    "commit": "https://github.com/openclaw/skills/commit/3cacdb757b20ba2d77f32726a72becbf5128704e"
+    "version": "1.0.2",
+    "publishedAt": 1773418927258,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773083036197,
+      "commit": "https://github.com/openclaw/skills/commit/3cacdb757b20ba2d77f32726a72becbf5128704e"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1772802477417,
