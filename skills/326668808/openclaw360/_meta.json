@@ -3,9 +3,15 @@
   "slug": "openclaw360",
   "displayName": "Openclaw360",
   "latest": {
-    "version": "0.1.8",
-    "publishedAt": 1773423570794,
-    "commit": "https://github.com/openclaw/skills/commit/bca4b98acf94c06726fc13a606874e247b07948c"
+    "version": "0.1.11",
+    "publishedAt": 1773456709121,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.8",
+      "publishedAt": 1773423570794,
+      "commit": "https://github.com/openclaw/skills/commit/bca4b98acf94c06726fc13a606874e247b07948c"
+    }
+  ]
 }
