@@ -1,9 +1,8 @@
 ---
+version: "2.0.0"
 name: loan-calculator
-version: 1.0.0
-description: 贷款计算器。等额本息/等额本金计算、方案对比、提前还款分析、贷款能力评估、还款计划表、再融资分析。Loan calculator with equal installment/principal, comparison, prepayment analysis, affordability, schedule, refinance.
+description: "贷款计算器。等额本息/等额本金计算、方案对比、提前还款分析、贷款能力评估、还款计划表、再融资分析。Loan calculator with equal installment/principal, comparison, prepayment analysis, affordability, schedule, refinance. Use when you need loan calculator capabilities. Triggers on: loan calculator."
 author: BytesAgain
-tags: [loan, mortgage, calculator, finance, 贷款, 房贷, 车贷, 等额本息, 等额本金, 提前还款]
 ---
 # loan-calculator
 
@@ -28,7 +27,6 @@ tags: [loan, mortgage, calculator, finance, 贷款, 房贷, 车贷, 等额本息
 | `refinance` | refinance |
 | `help` | help |
 
-
 ## 专业建议
 
 - `calculate` 默认使用等额本息（月供固定），加 `equal-principal` 切换等额本金
@@ -39,3 +37,20 @@ tags: [loan, mortgage, calculator, finance, 贷款, 房贷, 车贷, 等额本息
 
 ---
 *loan-calculator by BytesAgain*
+---
+💬 Feedback & Feature Requests: https://bytesagain.com/feedback
+Powered by BytesAgain | bytesagain.com
+
+## Examples
+
+```bash
+# Show help
+loan-calculator help
+
+# Run
+loan-calculator run
+```
+
+## Commands
+
+Run `loan-calculator help` to see all available commands.

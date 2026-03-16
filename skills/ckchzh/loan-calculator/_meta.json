@@ -1,11 +1,17 @@
 {
   "owner": "ckchzh",
   "slug": "loan-calculator",
-  "displayName": "loan-calculator",
+  "displayName": "Loan Calculator",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773202695428,
-    "commit": "https://github.com/openclaw/skills/commit/8fcd379ae010728fa17a3da46206eb7492108d12"
+    "version": "2.3.5",
+    "publishedAt": 1773666397795,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773202695428,
+      "commit": "https://github.com/openclaw/skills/commit/8fcd379ae010728fa17a3da46206eb7492108d12"
+    }
+  ]
 }
