@@ -1,0 +1,11 @@
+{
+  "owner": "jasydongo",
+  "slug": "mysqladm",
+  "displayName": "MySQL Administration",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773642438373,
+    "commit": null
+  },
+  "history": []
+}
