@@ -86,6 +86,7 @@ def main() -> int:
     ledger_path = output_dir / f"{args.prefix}-ledger.md"
     claim_map_path = output_dir / f"{args.prefix}-claim-map.md"
     gap_report_path = output_dir / f"{args.prefix}-gap-report.md"
+    fairness_report_path = output_dir / f"{args.prefix}-fairness-review.md"
     summary_path = output_dir / f"{args.prefix}-summary.md"
 
     run_python(
@@ -100,6 +101,10 @@ def main() -> int:
         root / "scripts" / "triage_evidence_gaps.py",
         [str(claims), str(ledger_path), "-o", str(gap_report_path)],
     )
+    run_python(
+        root / "scripts" / "review_comparison_fairness.py",
+        [str(claims), str(ledger_path), "-o", str(fairness_report_path)],
+    )
 
     write_summary(
         summary_path=summary_path,
@@ -108,6 +113,7 @@ def main() -> int:
         ledger_path=ledger_path,
         claim_map_path=claim_map_path,
         gap_report_path=gap_report_path,
+        fairness_report_path=fairness_report_path,
         generated_notes=generated_notes,
         result_artifacts=result_artifacts,
     )
@@ -117,6 +123,7 @@ def main() -> int:
     print(f"ledger: {ledger_path}")
     print(f"claim_map: {claim_map_path}")
     print(f"gap_report: {gap_report_path}")
+    print(f"fairness_report: {fairness_report_path}")
     return 0
 
 
@@ -169,6 +176,7 @@ def write_summary(
     ledger_path: Path,
     claim_map_path: Path,
     gap_report_path: Path,
+    fairness_report_path: Path,
     generated_notes: list[Path],
     result_artifacts: list[Path],
 ) -> None:
@@ -215,6 +223,7 @@ def write_summary(
             f"- Ledger draft: `{ledger_path}`",
             f"- Claim map draft: `{claim_map_path}`",
             f"- Gap report draft: `{gap_report_path}`",
+            f"- Fairness review draft: `{fairness_report_path}`",
             "",
             "## Review checklist",
             "",
@@ -222,6 +231,7 @@ def write_summary(
             "- Verify all external sources before using them for research claims.",
             "- Remove or narrow unsupported claims in the claim map.",
             "- Resolve blocker and major gaps before drafting downstream text.",
+            "- Review the fairness report before keeping comparative or benchmark-win language.",
             "",
             "## Next step",
             "",

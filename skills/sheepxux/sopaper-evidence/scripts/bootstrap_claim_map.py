@@ -247,6 +247,10 @@ def match_evidence_for_claim(claim: ClaimEntry, evidence: list[EvidenceEntry]) -
                     score += 4
                 if comparative and entry.classification == "project_evidence":
                     score += 12
+                if comparative and is_direct_result_statement(entry.statement):
+                    score += 18
+                if comparative and entry.source_title.lower() == "aggregated result artifacts":
+                    score += 8
                 scored.append(MatchCandidate(entry=entry, score=score, basis="statement"))
                 continue
 

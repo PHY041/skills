@@ -20,10 +20,14 @@ Canonical upstream source: [SoPaper-Evidence](https://github.com/sheepxux/SoPape
 
 - evidence-first workflow
 - topic-first search, fetch, and conservative verification
+- reviewed primary-source summaries for stronger research-level source grounding
 - source priority and verification rules
 - claim-to-evidence mapping
 - explicit evidence gap reporting
 - structured result-artifact ingestion for stronger comparative claim gating
+- direct csv/json result-artifact ingestion for lower-friction project evidence onboarding
+- multi-artifact fusion and metric normalization for stronger experiment evidence packaging
+- dedicated fairness review for comparative claims
 - conservative writing support
 - useful for OpenClaw-style embodied AI and robotics projects
 

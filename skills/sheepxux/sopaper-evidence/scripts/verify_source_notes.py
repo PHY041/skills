@@ -53,9 +53,14 @@ def verify_note(text: str) -> str:
                 "candidate benchmark/task fact:",
                 "candidate evaluation fact:",
                 "candidate metric fact:",
+                "candidate baseline fact:",
             ]
         )
     ]
+    benchmark_fact = first_fact(semantic_facts, "candidate benchmark/task fact:")
+    evaluation_fact = first_fact(semantic_facts, "candidate evaluation fact:")
+    metric_fact = first_fact(semantic_facts, "candidate metric fact:")
+    baseline_fact = first_fact(semantic_facts, "candidate baseline fact:")
 
     should_verify = (
         source_type in ALLOWED_TYPES
@@ -69,10 +74,31 @@ def verify_note(text: str) -> str:
     if not should_verify:
         return text
 
+    reviewed_summary = synthesize_reviewed_summary(
+        source_type=source_type,
+        benchmark_fact=benchmark_fact,
+        evaluation_fact=evaluation_fact,
+        metric_fact=metric_fact,
+        baseline_fact=baseline_fact,
+    )
+    verification_status = "reviewed-primary" if reviewed_summary else "verified-page-metadata"
+
     updated: list[str] = []
+    inserted_summary = False
     for line in lines:
         if line.startswith("- Verification status:"):
-            updated.append("- Verification status: verified-page-metadata")
+            updated.append(f"- Verification status: {verification_status}")
+        elif line == "## Key facts" and reviewed_summary and not inserted_summary:
+            updated.extend(
+                [
+                    "## Reviewed summary",
+                    "",
+                    f"- Reviewed summary: {reviewed_summary}",
+                    "",
+                    line,
+                ]
+            )
+            inserted_summary = True
         else:
             updated.append(line)
     return "\n".join(updated) + ("\n" if text.endswith("\n") else "")
@@ -82,6 +108,43 @@ def field_value(lines: list[str], prefix: str) -> str:
     for line in lines:
         if line.startswith(prefix):
             return line.split(":", 1)[1].strip().lower()
+    return ""
+
+
+def first_fact(facts: list[str], prefix: str) -> str:
+    lowered_prefix = prefix.lower()
+    for fact in facts:
+        if lowered_prefix in fact.lower():
+            return fact.split(":", 2)[-1].strip()
+    return ""
+
+
+def synthesize_reviewed_summary(
+    *,
+    source_type: str,
+    benchmark_fact: str,
+    evaluation_fact: str,
+    metric_fact: str,
+    baseline_fact: str,
+) -> str:
+    parts = [part for part in [benchmark_fact, evaluation_fact, metric_fact, baseline_fact] if part]
+    if len(parts) < 2:
+        return ""
+
+    summary_parts = []
+    if benchmark_fact:
+        summary_parts.append(benchmark_fact.rstrip("."))
+    if evaluation_fact:
+        summary_parts.append(evaluation_fact.rstrip("."))
+    if metric_fact:
+        summary_parts.append(metric_fact.rstrip("."))
+    if baseline_fact:
+        summary_parts.append(baseline_fact.rstrip("."))
+
+    if source_type in {"paper", "benchmark"}:
+        return "Reviewed primary-source summary: " + ". ".join(summary_parts[:3]) + "."
+    if source_type in {"repo", "official_doc"}:
+        return "Reviewed source summary: " + ". ".join(summary_parts[:2]) + "."
     return ""
 
 
