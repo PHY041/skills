@@ -1,6 +1,8 @@
 ---
+version: "2.0.0"
 name: Polymarket Screener
 description: "Screen Polymarket prediction markets by category, probability, liquidity, and track probability changes to find high-value opportunities. Use when you need polymarket screener capabilities. Triggers on: polymarket screener."
+author: BytesAgain
 ---
 
 # Polymarket Screener 🎯

@@ -3,11 +3,16 @@
   "slug": "polymarket-screener",
   "displayName": "Polymarket Screener",
   "latest": {
-    "version": "2.4.3",
-    "publishedAt": 1773614298763,
-    "commit": "https://github.com/openclaw/skills/commit/5eed307660dbcd44e1530669cc5ef45971bac30b"
+    "version": "2.4.5",
+    "publishedAt": 1773666779022,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.4.3",
+      "publishedAt": 1773614298763,
+      "commit": "https://github.com/openclaw/skills/commit/5eed307660dbcd44e1530669cc5ef45971bac30b"
+    },
     {
       "version": "2.2.0",
       "publishedAt": 1773421678114,
