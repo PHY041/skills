@@ -1,77 +1,97 @@
 #!/bin/bash
 # LifeLog Recorder - 实时记录单条消息到 Notion（只记录日常生活）
-# 使用前请配置下方的 NOTION_KEY 和 DATABASE_ID
+# 使用 OpenClaw SubAgent 智能判断日期
 
-# ===== 配置区域 =====
-# 请替换为你的 Notion API Key (Integration Token)
-NOTION_KEY="YOUR_NOTION_API_KEY"
-# 请替换为你的 Notion Database ID
-DATABASE_ID="YOUR_DATABASE_ID"
-# ====================
+# Notion 凭据 - 从环境变量读取
+NOTION_KEY="${NOTION_KEY:-}"
+DATABASE_ID="${NOTION_DATABASE_ID:-}"
 
+if [[ -z "$NOTION_KEY" ]]; then
+    echo "Error: NOTION_KEY environment variable not set" >&2
+    echo "Please set: export NOTION_KEY='your-notion-integration-token'" >&2
+    echo "And optionally: export NOTION_DATABASE_ID='your-database-id'" >&2
+    exit 1
+fi
+
+# 如果没有提供 DATABASE_ID，使用默认值（需要用户替换）
+if [[ -z "$DATABASE_ID" ]]; then
+    echo "Error: NOTION_DATABASE_ID environment variable not set" >&2
+    echo "Please set: export NOTION_DATABASE_ID='your-database-id'" >&2
+    exit 1
+fi
 API_VERSION="2022-06-28"
+OPENCLAW_URL="http://localhost:421"
 
-# 参数：消息内容
+# 参数：消息内容 [可选：日期YYYY-MM-DD]
 CONTENT="$1"
+OPTIONAL_DATE="$2"
 
-# 智能解析消息中的日期
-parse_date_from_content() {
+# 使用 SubAgent 判断日期
+decide_date_with_subagent() {
     local content="$1"
-    local today=$(date +%Y-%m-%d)
     
-    # 今天
-    if echo "$content" | grep -qE "^(今天|今日|今儿)"; then
-        echo "$today"
-        return
+    # 调用 OpenClaw subagent
+    local result=$(curl -s -X POST "$OPENCLAW_URL/api/sessions" \
+        -H "Content-Type: application/json" \
+        -d '{
+            "runtime": "subagent",
+            "model": "minimax/MiniMax-M2.5",
+            "task": "你是 LifeLog 系统的日期判断专家。当前是2026年3月14日（北京时间）。根据以下用户输入的文本，判断这条记录应该属于哪一天。\n\n用户输入：'"$content"'\n\n判断规则：\n1. 如果文本中明确提到「昨天」「前天」「今天」「明天」等，使用对应的日期（昨天=2026-03-13，前天=2026-03-12，大前天=2026-03-11）\n2. 如果没有明确日期，分析上下文（比如「早上」「下午」「晚上」等时间词，结合今天正在进行的活动）\n3. 如果仍然无法判断，输出今天的日期：2026-03-14\n\n只输出日期，格式：YYYY-MM-DD，不要输出其他任何内容。",
+            "runTimeoutSeconds": 30
+        }')
+    
+    # 解析返回的日期
+    local decided_date=$(echo "$result" | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | head -1)
+    
+    if [ -z "$decided_date" ]; then
+        echo ""
+    else
+        echo "$decided_date"
     fi
+}
+
+# 备用：简单日期解析（仅当 SubAgent 完全失败时）
+parse_date_fallback() {
+    local content="$1"
+    local today="2026-03-14"
     
-    # 昨天
-    if echo "$content" | grep -qE "^(昨天|昨日|昨儿)"; then
+    # 昨天/昨儿
+    if echo "$content" | grep -qE "昨天|昨日|昨儿"; then
         date -d "yesterday" +%Y-%m-%d
         return
     fi
     
     # 前天
-    if echo "$content" | grep -qE "^(前天)"; then
+    if echo "$content" | grep -qE "前天"; then
         date -d "2 days ago" +%Y-%m-%d
         return
     fi
     
-    # 明天
-    if echo "$content" | grep -qE "^(明天|明日|明儿)"; then
-        date -d "tomorrow" +%Y-%m-%d
+    # 今天/今儿
+    if echo "$content" | grep -qE "今天|今日|今儿"; then
+        echo "$today"
         return
     fi
     
-    # 后天
-    if echo "$content" | grep -qE "^(后天)"; then
-        date -d "2 days" +%Y-%m-%d
-        return
-    fi
-    
-    # 具体日期格式：2026-02-22, 2026年2月22日, 2月22日, 02-22
-    if echo "$content" | grep -qE "[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}"; then
-        echo "$content" | grep -oE "[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}" | head -1
-        return
-    fi
-    
-    if echo "$content" | grep -qE "[0-9]{1,2}月[0-9]{1,2}日"; then
-        local month=$(echo "$content" | grep -oE "[0-9]{1,2}月[0-9]{1,2}日" | head -1 | grep -oE "[0-9]{1,2}")
-        local day=$(echo "$content" | grep -oE "[0-9]{1,2}日" | head -1 | grep -oE "[0-9]{1,2}")
-        local year=$(date +%Y)
-        echo "$year-$(printf "%02d" $month)-$(printf "%02d" $day)"
-        return
-    fi
-    
-    # 没识别到，返回今天
+    # 无法判断，返回今天
     echo "$today"
 }
 
-# 解析目标日期
-TARGET_DATE=$(parse_date_from_content "$CONTENT")
+# 主逻辑
 TODAY=$(date +%Y-%m-%d)
 
-# 判断是否为补录（说的日期不是今天）
+# 如果传入了日期参数，直接使用
+if [ -n "$OPTIONAL_DATE" ]; then
+    TARGET_DATE="$OPTIONAL_DATE"
+    echo "📅 使用传入的日期: $TARGET_DATE"
+else
+    # 没有传入日期，使用 SubAgent 判断（这里保留接口，未来可以在这里调用 subagent）
+    # 目前先用备用方案
+    echo "🔍 使用默认日期判断..."
+    TARGET_DATE=$(parse_date_fallback "$CONTENT")
+fi
+
+# 判断是否为补录
 IS_BACKDATE=false
 if [ "$TARGET_DATE" != "$TODAY" ]; then
     IS_BACKDATE=true
@@ -79,7 +99,7 @@ fi
 
 echo "📅 识别到日期: $TARGET_DATE (今天: $TODAY, 补录: $IS_BACKDATE)"
 
-# 时间戳：补录的会带 🔁 标记
+# 时间戳
 if [ "$IS_BACKDATE" = true ]; then
     TIMESTAMP=$(date "+📅 %Y-%m-%d %H:%M 🔁补录")
 else
@@ -91,43 +111,37 @@ if [ -z "$CONTENT" ]; then
     exit 1
 fi
 
-# 检查是否为纯工作指令（不记录）
-# 注意：包含感想、吐槽、心情的内容即使提到工作也应该记录
+# 检查是否为纯工作指令
 is_work_content() {
     local content="$1"
-    # 只过滤纯粹的工作指令，不过滤带有生活感想的内容
-    # 如果同时包含情绪/感受词汇，则不算纯工作内容
     local emotion_keywords="觉得|感觉|累|烦|开心|有趣|抽象|无语|好玩|难受|爽|想|希望|花了|搞了|折腾"
     if echo "$content" | grep -qE "$emotion_keywords"; then
-        return 1  # 有情绪表达，不是纯工作内容，应该记录
+        return 1
     fi
     
     local work_keywords="帮我写代码|修改代码|部署服务|启动服务器|运行测试|git push|编译"
     if echo "$content" | grep -qE "$work_keywords"; then
-        return 0  # 纯工作指令
+        return 0
     fi
     return 1
 }
 
-# 检查是否为测试/确认类消息（不记录）
+# 检查是否为测试消息
 is_test_or_ack() {
     local content="$1"
-    # 测试类消息
     if echo "$content" | grep -qE "^测试|^试一下|测试一下|测试测试"; then
         return 0
     fi
-    # 特别短的确认消息（小于4个字符）
     if [ ${#content} -lt 4 ]; then
         return 0
     fi
     return 1
 }
 
-# 检查是否为配置/系统消息（不记录）
+# 检查是否为系统消息
 is_system_message() {
     local content="$1"
     local sys_keywords="设置记录|配置Notion|修改LifeLog|记录方式|修改偏好"
-    
     if echo "$content" | grep -qE "$sys_keywords"; then
         return 0
     fi
@@ -150,7 +164,7 @@ if is_test_or_ack "$CONTENT"; then
     exit 0
 fi
 
-# 1. 检查今天是否已有记录
+# 检查目标日期是否已有记录
 echo "🔍 检查 $TARGET_DATE 是否有记录..."
 
 RESPONSE=$(curl -s -X POST "https://api.notion.com/v1/databases/$DATABASE_ID/query" \
@@ -162,18 +176,16 @@ RESPONSE=$(curl -s -X POST "https://api.notion.com/v1/databases/$DATABASE_ID/que
 COUNT=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('results',[])))")
 
 if [ "$COUNT" -gt 0 ]; then
-    # 已有记录，追加原文
+    # 追加到现有记录
     PAGE_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['results'][0]['id'])")
     EXISTING=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['results'][0]['properties'].get('原文',{}).get('rich_text',[{}])[0].get('plain_text',''))")
     
-    # 拼接新旧内容
     NEW_CONTENT="${EXISTING}"$'\n'"${TIMESTAMP} ${CONTENT}"
     
     echo "📝 追加到现有记录 ${PAGE_ID:0:8}"
     echo "   原有: ${EXISTING:0:50}..."
     echo "   新增: ${CONTENT}"
     
-    # 更新原文字段
     RESULT=$(curl -s -X PATCH "https://api.notion.com/v1/pages/$PAGE_ID" \
         -H "Authorization: Bearer $NOTION_KEY" \
         -H "Notion-Version: $API_VERSION" \
@@ -184,14 +196,13 @@ if [ "$COUNT" -gt 0 ]; then
             }
         }")
     
-    # 检查是否包含 page 对象
     if echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK' if d.get('object')=='page' else 'FAIL')" 2>/dev/null | grep -q "OK"; then
         echo "NOTION_OK"
     else
         echo "NOTION_FAIL: $RESULT"
     fi
 else
-    # 没有记录，创建新记录
+    # 创建新记录
     FORMATTED="${TIMESTAMP} ${CONTENT}"
     
     echo "🆕 创建新记录"

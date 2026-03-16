@@ -1,13 +1,18 @@
 {
   "owner": "421zuoduan",
   "slug": "lifelog",
-  "displayName": "LifeLog 生活记录系统",
+  "displayName": "Lifelog",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1772563943416,
-    "commit": "https://github.com/openclaw/skills/commit/d59d21758b39a26a1929fa3178cd4ab2c4453df3"
+    "version": "1.2.3",
+    "publishedAt": 1773555094435,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1772563943416,
+      "commit": "https://github.com/openclaw/skills/commit/d59d21758b39a26a1929fa3178cd4ab2c4453df3"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1771866842589,
