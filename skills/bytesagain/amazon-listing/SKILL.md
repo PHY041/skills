@@ -1,11 +1,8 @@
 ---
+version: "2.0.0"
 name: amazon-listing
-version: 1.0.0
-description: "亚马逊Listing优化工具。标题优化、五点描述、后台关键词、PPC广告、评价管理、排名提升。Amazon listing optimizer with title, bullets, backend keywords, PPC, reviews, ranking. 亚马逊、Amazon、跨境电商、Listing。Use when optimizing Amazon product listings."
-author: BytesAgain <hello@bytesagain.com>
-homepage: https://bytesagain.com
-tags: [amazon, listing, ppc, keywords, ranking, 亚马逊, 跨境电商, Listing优化]
-category: ecommerce
+description: "亚马逊Listing优化工具。标题优化、五点描述、后台关键词、PPC广告、评价管理、排名提升。Amazon listing optimizer with title, bullets, backend keywords, PPC, reviews, ranking. 亚马逊、Amazon、跨境电商、Listing。Use when optimizing Amazon product listings. Triggers on: amazon listing."
+author: BytesAgain
 ---
 
 # Amazon Listing — 亚马逊Listing优化
@@ -33,3 +30,9 @@ bash scripts/amazon.sh ppc "ACOS优化"
 bash scripts/amazon.sh review "获评策略"
 bash scripts/amazon.sh rank "提升BSR排名"
 ```
+---
+💬 Feedback & Feature Requests: https://bytesagain.com/feedback
+Powered by BytesAgain | bytesagain.com
+
+- Run `amazon-listing help` for all commands
+
