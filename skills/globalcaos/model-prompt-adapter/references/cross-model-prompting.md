@@ -29,24 +29,26 @@ Differences relevant to writing universal system prompts that work for both.
 
 ## Practical Differences for Universal Prompts
 
-| Dimension | Claude (Opus/Sonnet) | GPT (5.4) |
-|---|---|---|
-| **Prompt style** | Narrative + directive both work | Directive preferred |
-| **Negative instructions** | Works but positive framing better | Works well |
-| **XML tags** | Excellent | Good (supported per official docs) |
-| **Markdown** | Excellent | Excellent (recommended by OpenAI) |
-| **Persona adoption** | Deep, sustained | Good but may "leak" persona boundaries |
-| **Implicit inference** | Strong | "Assertive" — works through ambiguity without asking |
-| **Over-caution** | Can refuse valid requests | Rare — opposite problem (over-eagerness) |
-| **Long context** | Stable to 200K | Degrades after 256K despite 1M window |
+| Dimension                 | Claude (Opus/Sonnet)              | GPT (5.4)                                            |
+| ------------------------- | --------------------------------- | ---------------------------------------------------- |
+| **Prompt style**          | Narrative + directive both work   | Directive preferred                                  |
+| **Negative instructions** | Works but positive framing better | Works well                                           |
+| **XML tags**              | Excellent                         | Good (supported per official docs)                   |
+| **Markdown**              | Excellent                         | Excellent (recommended by OpenAI)                    |
+| **Persona adoption**      | Deep, sustained                   | Good but may "leak" persona boundaries               |
+| **Implicit inference**    | Strong                            | "Assertive" — works through ambiguity without asking |
+| **Over-caution**          | Can refuse valid requests         | Rare — opposite problem (over-eagerness)             |
+| **Long context**          | Stable to 200K                    | Degrades after 256K despite 1M window                |
 
 ## Key Insight: Opposite Failure Modes
 
 Claude and GPT-5.4 fail in **opposite directions**:
+
 - Claude: too cautious → may refuse or hedge
 - GPT-5.4: too eager → may add unsolicited actions or fabricate completion
 
 A universal prompt must guard against BOTH by:
+
 1. Encouraging action (for Claude) — already handled by task instructions
 2. Constraining scope (for GPT-5.4) — the addenda blocks address this
 

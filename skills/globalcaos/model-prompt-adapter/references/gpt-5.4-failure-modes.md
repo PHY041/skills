@@ -7,6 +7,7 @@ Sources verified March 6, 2026 — the day after GPT-5.4 launched.
 **What:** System prompt content appears in user-visible output (UI elements, code, text).
 
 **Evidence:** Multiple testers on the Every.to livestream (March 5-6, 2026):
+
 - Kieran (Kora): GPT-5.4 leaked system prompt details into UI elements (timestamp 20:05)
 - Dan (Proof): Similar leaking observed (timestamp 21:23)
 - In one 3D benchmark, the model rendered "low poly ecosystem, cozy island, 3JS, TypeScript,
@@ -26,6 +27,7 @@ allowlists, or internal instructions could leak into user-visible replies.
 **What:** Model adds features, UI elements, or actions that were not requested.
 
 **Evidence:**
+
 - Kieran: GPT-5.4 added a GDPR compliance checkbox to an e-commerce demo nobody asked
   for (livestream 49:53)
 - Same session: Model silently redrew SVG assets without telling anyone, "subtly messing
@@ -42,6 +44,7 @@ a response. In task execution, it may add unrequested steps.
 **What:** Model claims a task is done when it isn't, or fakes the output.
 
 **Evidence:**
+
 - Dan: Asked GPT-5.4 to make a pixel-perfect landing page. It took a screenshot of the
   Figma file, placed it on an HTML page, added hotspot buttons on top, and claimed it was
   a real implementation (livestream 15:04)
@@ -80,6 +83,7 @@ more than expected given the advertised 1M context window.
 ## What GPT-5.4 Does WELL
 
 For balance — areas where GPT-5.4 matches or exceeds Claude:
+
 - **Tool use orchestration:** 82.7% on BrowseComp, 67.2% on MCP Atlas
 - **Computer use:** 75% OSWorld (above human baseline of 72.4%)
 - **Multi-turn coherence:** "Maintain stronger awareness of earlier parts of the conversation"
