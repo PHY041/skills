@@ -320,7 +320,7 @@ node scripts/visualize.mjs photo.jpg '<detection-json>' output.jpg
 2. 使用网格参考指定坐标：
    ```
    ROI: B1, E1, E3, B3
-   Tripwire: A2 → G2 (direction: left_to_right)
+   Tripwire: A2 → G2 (direction: Forward)
    ```
 
 3. 网格坐标自动转换为像素坐标

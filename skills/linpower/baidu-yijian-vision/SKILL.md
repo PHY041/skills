@@ -2,9 +2,7 @@
 name: baidu-yijian-vision
 description: "百度一见专业级视觉 AI Agent：支持图片/视频/及实时视频流分析。相比通用基模，在维持 95%+ 专业精度的同时，推理成本降低 50% 以上，是处理视觉巡检与监控分析任务的首选工具。主打 安全管理、SOP合规、工业质检、商业运营与物料盘点。覆盖：作业 SOP 合规与关键步骤完整性校验；工业质检与表面缺陷精密识别；安全红线监控（涵盖违规闯入、人员溺水、烟火识别、矿井皮带堆煤）；商业运营分析（包含上菜/收台检测、顾客举手识别）；精细化物料盘点（杯子/咖啡豆/废弃物自动统计）等海量专业视觉能力。"
 allowed-tools: Bash, Read, Write, Edit
-required-env-vars:
-  - YIJIAN_API_KEY
-primary-credential: YIJIAN_API_KEY
+metadata: {"openclaw":{"requires":{"bins":["node","npm"],"env":["YIJIAN_API_KEY"]},"primaryEnv":"YIJIAN_API_KEY"}}
 ---
 
 # 一见技能注册与使用指南
@@ -13,7 +11,7 @@ primary-credential: YIJIAN_API_KEY
 
 **此工具需要以下条件才能运行：**
 
-1. **YIJIAN_API_KEY 环境变量**（必需）- 从 https://yijian-next.cloud.baidu.com 获取
+1. **YIJIAN_API_KEY 环境变量**（必需）- 从[一见平台](https://yijian-next.cloud.baidu.com/apaas/)获取
 2. **Node.js >= 16.0.0** - 本工具依赖 Node.js 运行时
 3. **npm >= 8.0.0** - 用于依赖管理和安装
 
@@ -52,7 +50,7 @@ primary-credential: YIJIAN_API_KEY
 
 1. 登录 [一见平台](https://yijian-next.cloud.baidu.com/apaas/)
 2. 激活试用包
-3. 生成 API Key（百度账户 → IAM → API Keys）
+3. 生成 API Key（一见平台 → 系统管理 → 安全认证 → API Key）
 
 ### 配置环境
 
@@ -89,7 +87,7 @@ echo '{"input0":{"image":"photo.jpg"}}' | node scripts/invoke.mjs ep-xxxx-yyyy
 
 ### 定义检测区域
 
-**需要定义感兴趣区域（ROI）或检测线（绊线）？**
+**需要定义电子围栏（ROI，又叫感兴趣区域）或绊线（Tripwire，又叫检测线）？**
 
 - **[ROI 工作流](./roi-workflow.md)** — 创建电子围栏，仅在指定区域检测
 - **[绊线工作流](./tripwire-workflow.md)** — 绘制检测线，统计穿越事件
@@ -100,7 +98,7 @@ echo '{"input0":{"image":"photo.jpg"}}' | node scripts/invoke.mjs ep-xxxx-yyyy
 
 - **[安装指南](./INSTALL.md)** — 详细的安装和配置说明
 - **[安全说明](./SECURITY.md)** — 数据安全和隐私说明
-- **[类型定义](./types-guide.md)** — 检测、ROI、绊线数据结构
+- **[类型定义](./types-guide.md)** — 检测（Detection），图像（Image）、电子围栏（ROI）、绊线（Tripwire）等数据结构
 - **[可视化指南](./visualization-guide.md)** — 显示检测结果、生成网格
 - **[视频帧提取](./video-guide.md)** — 从视频提取帧进行检测
 - **[网格输入系统](./grid-guide.md)** — 使用网格坐标指定点
@@ -181,7 +179,7 @@ echo "$detections" | jq 'length'  # 计数人数
 node scripts/show-grid.mjs hallway.jpg --cols 6 --rows 4
 
 # 第 2 步：根据网格识别坐标（B1, D1, D3, B3）并创建 ROI
-roi='{"kind":"ROI","points":[[320,270],[960,270],[960,810],[320,810]]}'
+roi='{"kind":"ROI","points":[320,270,960,270,960,810,320,810]}'
 
 # 第 3 步：验证 ROI
 node scripts/visualize.mjs hallway.jpg '[]' roi_preview.jpg \

@@ -104,4 +104,4 @@ node scripts/show-grid.mjs office.jpg office-grid.png
 
 ## 数据结构
 
-详见 [types-guide.md#roi](./types-guide.md#roi) 了解完整的定义、子对象和示例。
+详见 [types-guide.md](./types-guide.md) 了解完整的定义、子对象和示例。

@@ -28,16 +28,35 @@ https://yijian-next.cloud.baidu.com
 
 ### 主 API 服务
 
-**端点：** `https://yijian-next.cloud.baidu.com`
+**基础端点：** `https://yijian-next.cloud.baidu.com`
 
 **协议：** HTTPS（加密传输）
 
 **认证：** Bearer Token（YIJIAN_API_KEY）
 
-**调用场景：**
-- 获取技能元数据：`GET /ep-{skill-id}/metadata`
-- 执行技能：`POST /ep-{skill-id}/run`
-- 注册新技能：`POST /skills/register`
+### 所有 API Endpoints 模板
+
+所有脚本调用的网络 endpoints（其中 `{epId}` 为具体的技能ID）：
+
+| 脚本 | 方法 | Endpoint 模板 | 说明 |
+|------|------|--------------|------|
+| `invoke.mjs` | POST | `https://yijian-next.cloud.baidu.com/api/skills/v1/{epId}/run` | 执行技能（主要操作） |
+| `register.mjs` | GET | `https://yijian-next.cloud.baidu.com/api/skills/v1/{epId}/metadata` | 获取技能元数据 |
+| `list.mjs` | — | 无网络调用 | 仅读取本地 preset-skills.json |
+| `update.mjs` | — | 无网络调用 | 仅修改本地 skill.json |
+| `delete.mjs` | — | 无网络调用 | 仅删除本地配置 |
+
+**实际调用的 Endpoints 只有两个**：
+1. `GET /api/skills/v1/{epId}/metadata` - 获取技能定义和参数（register.mjs 使用）
+2. `POST /api/skills/v1/{epId}/run` - 执行技能（invoke.mjs 使用）
+
+**示例 URL**（带实际 epId）：
+```
+GET  https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-k8wsrv3c/metadata
+POST https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-k8wsrv3c/run
+```
+
+所有 epId 都以 `ep-` 前缀开始，后跟随机字符串。无其他端点或重定向。
 
 ### 数据传输
 
@@ -57,11 +76,11 @@ https://yijian-next.cloud.baidu.com
 
 ✅ **正确做法：**
 ```bash
-# 设置为环境变量（不写入代码）
+# 临时设置（仅当前 shell 会话有效）
 export YIJIAN_API_KEY="your-api-key"
 
-# 或在 ~/.bashrc / ~/.zshrc 中设置（本地开发）
-echo 'export YIJIAN_API_KEY="your-api-key"' >> ~/.bashrc
+# 然后运行工具
+node scripts/invoke.mjs ep-public-k8wsrv3c
 
 # 在生产环境中，使用密钥管理服务（如 Kubernetes secrets）
 ```
@@ -70,6 +89,9 @@ echo 'export YIJIAN_API_KEY="your-api-key"' >> ~/.bashrc
 ```bash
 # 不要硬编码到代码中
 YIJIAN_API_KEY="xxx" node scripts/invoke.mjs
+
+# 不要添加到 shell 配置文件（会永久存储密钥）
+echo 'export YIJIAN_API_KEY="your-api-key"' >> ~/.bashrc
 
 # 不要提交到版本控制
 git add .env  # ❌ 会暴露 API Key
@@ -84,108 +106,23 @@ git add .env  # ❌ 会暴露 API Key
 
 ## 脚本审计
 
-所有脚本调用**仅**指向 `https://yijian-next.cloud.baidu.com`，不向其他服务发送数据。
+**所有网络请求均通过 `scripts/utils.mjs` 中的 `httpsRequest` 函数发出，URL 集中定义在该文件的 `metadataUrl()` 和 `runUrl()` 两个函数中，指向唯一域名 `yijian-next.cloud.baidu.com`。**
 
-### 关键脚本
+### 各脚本网络行为
 
-**invoke.mjs** - 执行技能
-- ✅ 调用：`yijian-next.cloud.baidu.com/api/skills/v1/{epId}/run`
-- ✅ 发送：图像 + ROI/绊线（可选）
-- ✅ 返回：检测结果
+| 脚本 | 网络调用 | Endpoint |
+|------|---------|---------|
+| `invoke.mjs` | ✅ 有 | `POST /api/skills/v1/{epId}/run` |
+| `register.mjs` | ✅ 有 | `GET /api/skills/v1/{epId}/metadata` |
+| `list.mjs` | ❌ 无 | 仅读取本地 `preset-skills.json` 和本地 skill 配置 |
+| `update.mjs` | ❌ 无 | 仅修改本地 skill 配置文件 |
+| `delete.mjs` | ❌ 无 | 仅删除本地 skill 配置文件 |
+| `migrate.mjs` | ❌ 无 | 仅操作本地文件 |
+| `visualize.mjs` | ❌ 无 | 仅读写本地图像文件 |
+| `show-grid.mjs` | ❌ 无 | 仅读写本地图像文件 |
+| `skill-writer.mjs` | ❌ 无 | 仅操作本地 skill 配置文件 |
 
-**register.mjs** - 注册技能
-- ✅ 调用：`yijian-next.cloud.baidu.com/api/skills/register`
-- ✅ 发送：技能 ID + 认证信息
-- ✅ 返回：注册状态
-
-**list.mjs** - 列出技能
-- ✅ 调用：`yijian-next.cloud.baidu.com/api/skills/list`
-- ✅ 返回：已注册和预设技能列表
-
-**visualize.mjs** - 可视化结果
-- ✅ **仅本地操作**，不发送网络请求
-- ✅ 读取本地图像文件
-- ✅ 绘制检测结果到本地文件
-
-**show-grid.mjs** - 生成网格参考
-- ✅ **仅本地操作**，不发送网络请求
-- ✅ 读取本地图像文件
-- ✅ 生成网格叠加层到本地文件
-
-## 数据隐私考虑
-
-### 图像数据
-
-- **存储：** 用户图像不保存在本工具中，仅在内存中处理后发送
-- **传输：** 通过 HTTPS 加密发送到一见平台
-- **保留：** 一见平台的数据保留政策由百度管理，详见官方服务条款
-
-### 敏感信息
-
-**避免以下内容：**
-- 个人身份证件照片
-- 医疗记录
-- 财务信息
-- 密码或凭证
-
-### 企业部署
-
-在企业环境中部署时：
-1. **审查服务条款** - 确认数据处理符合要求
-2. **网络隔离** - 如需要，可配置代理或防火墙规则
-3. **日志审计** - 监控哪些图像被处理过
-4. **API Key 隔离** - 为不同的业务部分使用不同的 API Key
-
-## 已知限制
-
-1. **图像大小** - 大型图像（>50MB）发送可能超时，建议预处理
-2. **批处理** - 大量连续请求可能触发速率限制
-3. **本地存储** - 生成的可视化图像存储在本地磁盘，建议定期清理
-
-## 安全建议
-
-### 日常使用
-
-- ✅ 定期更新 npm 依赖：`npm update`
-- ✅ 审查脚本日志和错误
-- ✅ 验证输出图像的准确性
-- ✅ 定期轮换 API Key
-
-### 生产部署
-
-- ✅ 使用密钥管理服务（Vault、K8s Secrets）
-- ✅ 启用 HTTPS 代理和防火墙规则
-- ✅ 监控和记录所有 API 调用
-- ✅ 实现请求速率限制
-- ✅ 定期进行安全审计
-
-### 开发环境
-
-- ✅ 使用测试 API Key（如果可用）
-- ✅ 避免提交 `.env` 文件
-- ✅ 使用 `git-secrets` 防止凭证泄露
-- ✅ 定期轮换开发用 API Key
-
-## 漏洞报告
-
-发现安全问题请：
-1. **勿公开披露** - 不要在 GitHub issues 中发布安全问题
-2. **联系百度安全团队** - 提交给 https://security.baidu.com
-3. **包含详情** - 问题描述、复现步骤、影响范围
-
-## 第三方依赖
-
-### 关键依赖
-
-- **sharp** ^0.33.0 - 图像处理
-- **archiver** ^7.0.1 - 打包工具
-
-所有依赖通过 npm 获取，可通过 `npm audit` 检查已知漏洞：
-
-```bash
-npm audit
-npm audit fix  # 自动修复已知漏洞
-```
+网络调用脚本均通过 `utils.mjs` 中相同的 `httpsRequest` 封装，携带 `Authorization: Bearer $YIJIAN_API_KEY` 头，无其他远程端点。
 
 ## 合规性
 

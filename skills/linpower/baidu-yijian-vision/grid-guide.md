@@ -70,7 +70,7 @@ $ node scripts/show-grid.mjs office.jpg
 转换为 ROI：
 {
   "kind": "ROI",
-  "points": [[col_B, row_2], [col_G, row_2], [col_G, row_5], [col_B, row_5]]
+  "points": [col_B, row_2, col_G, row_2, col_G, row_5, col_B, row_5]
 }
 
 # 使用 ROI 调用技能
@@ -90,8 +90,8 @@ $ node scripts/show-grid.mjs hallway.jpg
 转换为绊线：
 {
   "kind": "TripWire",
-  "points": [[col_A, row_3], [col_H, row_3]],
-  "direction": "left_to_right"
+  "points": [col_A, row_3, col_H, row_3],
+  "direction": "Forward"
 }
 
 # 使用绊线调用技能
@@ -108,17 +108,17 @@ $ echo '{"input0":{"image":"hallway.jpg","tripwire":"[...]"}}' | \
 [
   {
     "kind": "ROI",
-    "points": [[col_A, row_1], [col_C, row_1], [col_C, row_3], [col_A, row_3]],
+    "points": [col_A, row_1, col_C, row_1, col_C, row_3, col_A, row_3],
     "order": 0
   },
   {
     "kind": "ROI",
-    "points": [[col_D, row_1], [col_F, row_1], [col_F, row_3], [col_D, row_3]],
+    "points": [col_D, row_1, col_F, row_1, col_F, row_3, col_D, row_3],
     "order": 1
   },
   {
     "kind": "ROI",
-    "points": [[col_G, row_1], [col_H, row_1], [col_H, row_3], [col_G, row_3]],
+    "points": [col_G, row_1, col_H, row_1, col_H, row_3, col_G, row_3],
     "order": 2
   }
 ]

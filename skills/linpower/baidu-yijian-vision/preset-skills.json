@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "description": "Yijian preset skills library",
-  "lastUpdated": "2026-03-13",
+  "lastUpdated": "2026-03-16",
   "presetSkills": [
     {
       "epId": "ep-public-k8wsrv3c",
@@ -8042,6 +8042,1726 @@
         }
       ],
       "registeredAt": "2026-03-13T12:40:53.929Z"
+    },
+    {
+      "epId": "ep-public-gvm5xjw5",
+      "name": "入睡离床习惯偏离预警",
+      "description": "识别老人深夜长时间坐在客厅不回房休息的异常习惯。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-gvm5xjw5/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "入睡/离床习惯偏离预警",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:40.424Z"
+    },
+    {
+      "epId": "ep-public-q82rxr4u",
+      "name": "异味烟雾目视化初探",
+      "description": "识别垃圾桶或死角是否有由于高温产生的异常轻烟。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-q82rxr4u/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "异味/烟雾目视化初探",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:40.537Z"
+    },
+    {
+      "epId": "ep-public-mihvwkr2",
+      "name": "饮水频率不足预警",
+      "description": "统计老人全天的倒水/饮水次数，判断是否脱水。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-mihvwkr2/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "饮水频率不足预警",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:40.642Z"
+    },
+    {
+      "epId": "ep-public-4pgiva1j",
+      "name": "看护人情绪冲突行为监测",
+      "description": "监测保姆或看护人员是否有推搡、大声指责（配合拾音）等不当行为。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-4pgiva1j/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "看护人情绪/冲突行为监测",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:40.752Z"
+    },
+    {
+      "epId": "ep-public-yz8jbxff",
+      "name": "求助姿态大幅度挥手识别",
+      "description": "识别老人在远距离面对摄像头进行持续的大幅度双臂挥动呼救。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-yz8jbxff/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "求助姿态/大幅度挥手识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:40.869Z"
+    },
+    {
+      "epId": "ep-public-9rj5zggk",
+      "name": "宠物排泄污染监测",
+      "description": "识别猫狗在非指定区域（如地毯）产生的排泄物。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-9rj5zggk/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "宠物排泄污染监测",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:40.964Z"
+    },
+    {
+      "epId": "ep-public-18rhd2ui",
+      "name": "夜间室内非法入侵",
+      "description": "在布防模式下，识别非家庭成员的陌生面孔或异常形态人员。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-18rhd2ui/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "夜间室内非法入侵",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:41.071Z"
+    },
+    {
+      "epId": "ep-public-qfjm9mqe",
+      "name": "大门未锁虚掩识别",
+      "description": "识别入户门在夜间或全家外出时是否处于未完全闭合状态。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-qfjm9mqe/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "大门未锁/虚掩识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:41.183Z"
+    },
+    {
+      "epId": "ep-public-52da2sdy",
+      "name": "地面不明溢水监测",
+      "description": "识别卫生间或厨房地面由于漏水导致的大面积异常反光。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-52da2sdy/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "地面不明溢水监测",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:41.323Z"
+    },
+    {
+      "epId": "ep-public-qr52ay2q",
+      "name": "厨房明火未关火识别",
+      "description": "识别灶台在无人的情况下是否存在持续的火苗或锅具冒烟。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-qr52ay2q/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "厨房明火/未关火识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:41.426Z"
+    },
+    {
+      "epId": "ep-public-pc1s3wkw",
+      "name": "异物入口识别",
+      "description": "识别幼儿将细小非食物物体放入嘴中的高危瞬间。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-pc1s3wkw/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "异物入口识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:41.585Z"
+    },
+    {
+      "epId": "ep-public-n5zuv4vg",
+      "name": "攀爬家具异常行为",
+      "description": "监测幼儿攀爬电视柜、书架等可能导致家具倾倒的动作。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-n5zuv4vg/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "攀爬家具异常行为",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:41.787Z"
+    },
+    {
+      "epId": "ep-public-fxh2xney",
+      "name": "锐利物体持握识别",
+      "description": "识别幼儿是否拿取了美工刀、剪刀等危险工具。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-fxh2xney/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "锐利物体持握识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:41.896Z"
+    },
+    {
+      "epId": "ep-public-8agifewv",
+      "name": "阳台窗户高危区域入侵",
+      "description": "当幼儿接近开启的窗户或未封闭的阳台边沿时，立即报警。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-8agifewv/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "阳台/窗户高危区域入侵",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:42.006Z"
+    },
+    {
+      "epId": "ep-public-jtsexm4t",
+      "name": "婴儿俯卧口鼻遮挡识别",
+      "description": "监测婴儿在睡眠过程中是否翻身为俯卧姿态，或被被子遮挡口鼻。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-jtsexm4t/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "婴儿俯卧/口鼻遮挡识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:42.185Z"
+    },
+    {
+      "epId": "ep-public-8yrzq35x",
+      "name": "久坐静止异常预警",
+      "description": "识别老人在沙发或椅子上维持同一姿势超过 4 小时，判断是否出现身体不适",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-8yrzq35x/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "久坐/静止异常预警",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:42.293Z"
+    },
+    {
+      "epId": "ep-public-fbyjxhcc",
+      "name": "助行器拐杖遗忘识别",
+      "description": "当老人独自走动却未带上必备的助行工具时，进行视觉提醒。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-fbyjxhcc/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "助行器/拐杖遗忘识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:42.399Z"
+    },
+    {
+      "epId": "ep-public-tifffnmc",
+      "name": "晨起状态监测",
+      "description": "确认老人是否在预设时间点前已起床离开床铺，防止突发疾病未被察觉。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-tifffnmc/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "晨起状态监测",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:42.503Z"
+    },
+    {
+      "epId": "ep-public-7vkregnx",
+      "name": "定时服药行为确认",
+      "description": "通过识别老人打开药盒、倒水及吞咽动作，闭环服药管理。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-7vkregnx/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "定时服药行为确认",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:42.599Z"
+    },
+    {
+      "epId": "ep-public-y1dz6i1w",
+      "name": "老人跌倒地面滞留识别",
+      "description": "识别老人在客厅或卧室等区域发生意外摔倒或长时间躺在地面不动的行为。",
+      "scope": "",
+      "version": "V0.0.1",
+      "runUrl": "https://yijian-next.cloud.baidu.com/api/skills/v1/ep-public-y1dz6i1w/run",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "Image",
+          "description": "输入的图片",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "TemplateString",
+          "description": "输出信息"
+        }
+      ],
+      "rawInputs": [
+        {
+          "name": "input0",
+          "displayName": "输入",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "image",
+              "displayName": "图片",
+              "type": "Image",
+              "schema": null,
+              "defaultValue": "",
+              "value": "",
+              "valueType": "Image",
+              "description": "输入的图片",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "",
+          "optional": true,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "rawOutputs": [
+        {
+          "name": "output0",
+          "displayName": "输出",
+          "type": "DataSet",
+          "schema": [
+            {
+              "name": "message",
+              "displayName": "输出信息",
+              "type": "TemplateString",
+              "schema": null,
+              "defaultValue": "",
+              "value": "老人跌倒/地面滞留识别",
+              "valueType": "TemplateString",
+              "description": "",
+              "optional": true,
+              "readonly": false,
+              "constraint": null,
+              "visuals": ""
+            }
+          ],
+          "defaultValue": "",
+          "value": "",
+          "valueType": "DataSet",
+          "description": "输出信息",
+          "optional": false,
+          "readonly": false,
+          "constraint": null,
+          "visuals": ""
+        }
+      ],
+      "registeredAt": "2026-03-16T15:11:42.698Z"
     }
   ]
 }

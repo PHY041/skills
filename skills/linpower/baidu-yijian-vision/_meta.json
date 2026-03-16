@@ -3,9 +3,15 @@
   "slug": "baidu-yijian-vision",
   "displayName": "Baidu Yijian Vision",
   "latest": {
-    "version": "0.9.19",
-    "publishedAt": 1773419099115,
-    "commit": "https://github.com/openclaw/skills/commit/4b61339df44e2c53b20a19ff3e86648d84f891c5"
+    "version": "0.9.25",
+    "publishedAt": 1773677430900,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.9.19",
+      "publishedAt": 1773419099115,
+      "commit": "https://github.com/openclaw/skills/commit/4b61339df44e2c53b20a19ff3e86648d84f891c5"
+    }
+  ]
 }

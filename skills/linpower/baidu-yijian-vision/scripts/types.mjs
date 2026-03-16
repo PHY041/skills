@@ -172,7 +172,7 @@ function isBase64(str) {
 }
 
 /**
- * Parse image dimensions from buffer (supports JPEG and PNG).
+ * Parse image dimensions from buffer (supports JPEG, PNG and WEBP).
  */
 export function getImageDimensions(buffer) {
   // PNG: bytes 16-23 contain width and height in the IHDR chunk
@@ -198,6 +198,35 @@ export function getImageDimensions(buffer) {
       }
       const segLen = buffer.readUInt16BE(offset + 2);
       offset += 2 + segLen;
+    }
+  }
+
+  // WEBP: RIFF????WEBP VP8 /VP8L/VP8X chunks
+  if (buffer.length >= 12 &&
+      buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+      buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+    const chunkId = buffer.slice(12, 16).toString('ascii');
+    if (chunkId === 'VP8 ' && buffer.length >= 30) {
+      // Lossy: width/height at bytes 26-29 (14-bit each, little-endian, mask 0x3FFF)
+      return {
+        width: (buffer.readUInt16LE(26) & 0x3FFF),
+        height: (buffer.readUInt16LE(28) & 0x3FFF),
+      };
+    }
+    if (chunkId === 'VP8L' && buffer.length >= 25) {
+      // Lossless: 28-bit packed fields starting at byte 21
+      const bits = buffer.readUInt32LE(21);
+      return {
+        width: (bits & 0x3FFF) + 1,
+        height: ((bits >> 14) & 0x3FFF) + 1,
+      };
+    }
+    if (chunkId === 'VP8X' && buffer.length >= 30) {
+      // Extended: 24-bit little-endian width-1 at byte 24, height-1 at byte 27
+      return {
+        width: buffer.readUIntLE(24, 3) + 1,
+        height: buffer.readUIntLE(27, 3) + 1,
+      };
     }
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "baidu-yijian-vision",
-  "version": "0.9.19",
+  "version": "0.9.25",
   "description": "Client tool for registering and invoking Baidu Yijian vision skills",
   "type": "module",
   "private": true,
@@ -18,9 +18,5 @@
   },
   "optionalDependencies": {
     "sharp": "^0.33.0"
-  },
-  "requiredEnvVars": [
-    "YIJIAN_API_KEY"
-  ],
-  "primaryCredential": "YIJIAN_API_KEY"
+  }
 }
