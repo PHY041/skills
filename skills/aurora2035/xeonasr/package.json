@@ -1,7 +1,7 @@
 {
   "name": "xeon-asr",
-  "version": "1.0.0",
-  "description": "Xeon ASR 语音转文字技能 - 集成 xdp-audio-service 和 OpenVINO Qwen3-ASR 模型",
+  "version": "1.0.9",
+  "description": "Xeon ASR 语音转文字技能 - 集成 xdp-audio-service 和 OpenVINO Qwen3-ASR 模型，自动配置 OpenClaw 的 QQBot/Feishu 本地 STT",
   "main": "server.js",
   "scripts": {
     "install:all": "bash ./install.sh",
@@ -10,7 +10,7 @@
     "start:asr": "xdp-asr-service --host 127.0.0.1 --port 5001 --config ./audio_config.json",
     "dev": "node --watch server.js"
   },
-  "keywords": ["xeon", "asr", "audio", "transcribe", "speech-to-text", "qqbot", "openvino", "qwen3", "stt"],
+  "keywords": ["xeon", "asr", "audio", "transcribe", "speech-to-text", "qqbot", "feishu", "openvino", "qwen3", "stt", "openclaw"],
   "author": "aurora2035",
   "license": "MIT",
   "engines": {

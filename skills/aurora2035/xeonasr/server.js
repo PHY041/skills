@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { exec, spawn, execSync } = require('child_process');
 const formidable = require('formidable');
 const readline = require('readline');
@@ -12,8 +13,96 @@ const AUDIO_CONFIG_PATH = path.join(SKILL_DIR, 'audio_config.json');
 const VENV_PATH = path.join(SKILL_DIR, 'venv');
 const INSTALL_SCRIPT = path.join(SKILL_DIR, 'install.sh');
 
+// 展开路径中的 ~ 为用户主目录（支持 Docker 环境）
+function expandPath(inputPath) {
+  if (!inputPath) return inputPath;
+  if (inputPath.startsWith('~/')) {
+    return path.join(os.homedir(), inputPath.slice(2));
+  }
+  if (inputPath === '~') {
+    return os.homedir();
+  }
+  return inputPath;
+}
+
+function buildHfDownloadCommand(targetPath) {
+  const quotedPath = targetPath.replace(/"/g, '\\"');
+  return [
+    'export HF_ENDPOINT=https://hf-mirror.com',
+    'export HF_HUB_ENABLE_HF_TRANSFER=0',
+    'export PATH="$HOME/miniconda3/bin:$HOME/.local/bin:$PATH"',
+    'if command -v hf >/dev/null 2>&1; then HF_CLI="$(command -v hf)"; ' +
+      'elif [ -x "$HOME/miniconda3/bin/hf" ]; then HF_CLI="$HOME/miniconda3/bin/hf"; ' +
+      'elif [ -x "$HOME/.local/bin/hf" ]; then HF_CLI="$HOME/.local/bin/hf"; ' +
+      'elif command -v huggingface-cli >/dev/null 2>&1; then HF_CLI="$(command -v huggingface-cli)"; ' +
+      'elif [ -x "$HOME/miniconda3/bin/huggingface-cli" ]; then HF_CLI="$HOME/miniconda3/bin/huggingface-cli"; ' +
+      'elif [ -x "$HOME/.local/bin/huggingface-cli" ]; then HF_CLI="$HOME/.local/bin/huggingface-cli"; ' +
+      'else if [ -x "$HOME/miniconda3/bin/python" ]; then "$HOME/miniconda3/bin/python" -m pip install -q "huggingface_hub[cli]" >/dev/null 2>&1 || "$HOME/miniconda3/bin/python" -m pip install -q huggingface_hub >/dev/null 2>&1; ' +
+      'else python3 -m pip install --user -q "huggingface_hub[cli]" >/dev/null 2>&1 || python3 -m pip install --user -q huggingface_hub >/dev/null 2>&1; fi; ' +
+      'export PATH="$HOME/miniconda3/bin:$HOME/.local/bin:$PATH"; ' +
+      'if command -v hf >/dev/null 2>&1; then HF_CLI="$(command -v hf)"; ' +
+      'elif [ -x "$HOME/miniconda3/bin/hf" ]; then HF_CLI="$HOME/miniconda3/bin/hf"; ' +
+      'elif [ -x "$HOME/.local/bin/hf" ]; then HF_CLI="$HOME/.local/bin/hf"; ' +
+      'elif command -v huggingface-cli >/dev/null 2>&1; then HF_CLI="$(command -v huggingface-cli)"; ' +
+      'elif [ -x "$HOME/miniconda3/bin/huggingface-cli" ]; then HF_CLI="$HOME/miniconda3/bin/huggingface-cli"; ' +
+      'elif [ -x "$HOME/.local/bin/huggingface-cli" ]; then HF_CLI="$HOME/.local/bin/huggingface-cli"; else exit 127; fi; fi',
+    'mkdir -p "' + quotedPath + '"',
+    'if [ "$(basename "$HF_CLI")" = "hf" ]; then "$HF_CLI" download dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO --local-dir "' + quotedPath + '"; else "$HF_CLI" download dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO --local-dir "' + quotedPath + '" --local-dir-use-symlinks False; fi'
+  ].join(' && ');
+}
+
+// 检查模型是否存在，不存在则尝试自动下载
+async function checkAndDownloadModel(modelPath) {
+  const expandedPath = expandPath(modelPath);
+  
+  // 如果模型已存在，直接返回
+  if (fs.existsSync(expandedPath) && fs.readdirSync(expandedPath).length > 0) {
+    return { exists: true, path: expandedPath };
+  }
+  
+  console.log(`[ASR] 模型未找到：${modelPath}`);
+  console.log('[ASR] 尝试自动下载模型...');
+  
+  // 创建模型目录
+  const modelDir = path.dirname(expandedPath);
+  if (!fs.existsSync(modelDir)) {
+    fs.mkdirSync(modelDir, { recursive: true });
+  }
+  
+  // 使用 hf-mirror + Hugging Face CLI 下载模型
+  return new Promise((resolve) => {
+    const downloadCmd = buildHfDownloadCommand(expandedPath);
+    
+    console.log('[ASR] 正在通过 hf-mirror + HF CLI 下载模型...');
+    console.log(`[ASR] 目标路径：${expandedPath}`);
+    
+    const download = exec(downloadCmd, { timeout: 600000 }, (err, stdout, stderr) => {
+      if (err) {
+        console.error('[ASR] 模型下载失败:', err.message);
+        console.log('[ASR] 请手动下载模型：');
+        console.log('[ASR]   1. 访问：https://hf-mirror.com/dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO');
+        console.log('[ASR]   2. 使用 hf download 或 huggingface-cli download 从 hf-mirror 下载');
+        console.log(`[ASR]   3. 下载到：${expandedPath}`);
+        resolve({ exists: false, path: expandedPath });
+        return;
+      }
+      
+      console.log('[ASR] 模型下载完成！');
+      resolve({ exists: true, path: expandedPath });
+    });
+    
+    download.stdout?.on('data', (data) => {
+      process.stdout.write(`[ASR] ${data}`);
+    });
+    
+    download.stderr?.on('data', (data) => {
+      process.stderr.write(`[ASR] ${data}`);
+    });
+  });
+}
+
 // 检查配置是否完整
-function checkConfigStatus() {
+async function checkConfigStatus() {
   const issues = [];
   
   // 检查 audio_config.json
@@ -24,8 +113,18 @@ function checkConfigStatus() {
       const audioConfig = JSON.parse(fs.readFileSync(AUDIO_CONFIG_PATH, 'utf8'));
       if (!audioConfig.qwen3_asr_ov?.model) {
         issues.push('audio_config.json 中未配置模型路径');
-      } else if (!fs.existsSync(audioConfig.qwen3_asr_ov.model)) {
-        issues.push(`模型路径不存在：${audioConfig.qwen3_asr_ov.model}`);
+      } else {
+        const modelPath = audioConfig.qwen3_asr_ov.model;
+        const expandedPath = expandPath(modelPath);
+        
+        // 检查模型是否存在，不存在则尝试下载
+        if (!fs.existsSync(expandedPath) || fs.readdirSync(expandedPath).length === 0) {
+          console.log(`[ASR] 模型路径不存在：${modelPath}`);
+          const downloadResult = await checkAndDownloadModel(modelPath);
+          if (!downloadResult.exists) {
+            issues.push(`模型下载失败，请手动下载到：${modelPath}`);
+          }
+        }
       }
     } catch (e) {
       issues.push('audio_config.json 格式错误');
@@ -101,7 +200,7 @@ async function runInstallScript() {
 async function initializeAndCheck() {
   console.log('[ASR] 检查配置状态...');
   
-  const issues = checkConfigStatus();
+  const issues = await checkConfigStatus();
   
   if (issues.length > 0) {
     console.log('\n⚠️  检测到配置不完整：');

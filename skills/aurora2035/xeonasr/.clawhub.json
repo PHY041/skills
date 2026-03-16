@@ -1,10 +1,10 @@
 {
   "name": "xeon-asr",
-  "version": "1.0.0",
-  "description": "基于 OpenVINO Qwen3-ASR 模型的本地语音转文字技能。一键安装脚本自动创建 Python 环境、安装 xdp-audio-service、生成配置、配置 QQ Bot STT。",
+  "version": "1.0.9",
+  "description": "基于 OpenVINO Qwen3-ASR 模型的本地语音转文字技能。一键安装脚本自动创建 Python 环境、安装 xdp-audio-service、生成配置、配置 QQBot/Feishu Bot 本地 STT，并处理重复插件冲突。",
   "author": "aurora2035",
   "license": "MIT",
-  "tags": ["xeon", "asr", "audio", "transcribe", "speech-to-text", "qqbot", "openvino", "qwen3", "stt", "local"],
+  "tags": ["xeon", "asr", "audio", "transcribe", "speech-to-text", "qqbot", "feishu", "openvino", "qwen3", "stt", "local", "openclaw"],
   "main": "server.js",
   "repository": "",
   "homepage": "",

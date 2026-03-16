@@ -6,6 +6,10 @@
 
 set -euo pipefail
 
+# 强制使用 hf-mirror 加速 HuggingFace 下载（必须在任何下载操作之前设置）
+export HF_ENDPOINT=https://hf-mirror.com
+export HF_HUB_ENABLE_HF_TRANSFER=0  # 禁用 hf-transfer 确保使用标准下载
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -19,8 +23,10 @@ log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
 
 # 参数解析
 MODEL_PATH=""
+DEFAULT_MODEL_PATH="~/model/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO"
 FORCE=0
 SKIP_DEPS=0
+SKIP_START=0
 
 usage() {
     cat << EOF
@@ -29,13 +35,14 @@ Xeon ASR Skill 环境准备脚本
 用法: $0 [选项]
 
 选项:
-  --model-path PATH    指定 Qwen3-ASR 模型绝对路径（强烈建议）
+  --model-path PATH    指定 Qwen3-ASR 模型路径（默认: ~/model/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO）
   --force              强制重新生成虚拟环境
   --skip-deps          跳过系统依赖安装
+    --skip-start         仅安装和配置，不自动启动服务
   -h, --help           显示此帮助
 
 示例:
-  $0 --model-path /root/models/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO
+  $0                    # 使用默认路径 ~/model/，自动下载模型
   $0 --force --model-path /opt/models/asr
 EOF
     exit 0
@@ -46,6 +53,7 @@ while [[ $# -gt 0 ]]; do
         --model-path) MODEL_PATH="$2"; shift 2 ;;
         --force) FORCE=1; shift ;;
         --skip-deps) SKIP_DEPS=1; shift ;;
+        --skip-start) SKIP_START=1; shift ;;
         -h|--help) usage ;;
         *) log_error "未知参数: $1"; usage ;;
     esac
@@ -236,10 +244,10 @@ generate_config() {
 }
 
 create_default_config() {
-    cat > audio_config.json << 'EOF'
+        cat > audio_config.json <<EOF
 {
   "qwen3_asr_ov": {
-    "model": "/path/to/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO",
+        "model": "$HOME/model/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO",
     "device": "CPU",
     "sample_rate": 16000,
     "language": "zh",
@@ -251,21 +259,149 @@ create_default_config() {
   }
 }
 EOF
-    log_info "已生成默认配置文件"
+    log_info "已生成默认配置文件（模型路径: $HOME/model/...）"
+}
+
+# 展开路径中的 ~ 为实际路径
+expand_path() {
+    local path="$1"
+    if [[ "$path" == ~* ]]; then
+        path="${path/#\~/$HOME}"
+    fi
+    echo "$path"
+}
+
+# 解析可用的 Hugging Face CLI 命令
+resolve_hf_cli() {
+    export PATH="$HOME/miniconda3/bin:$HOME/.local/bin:$PATH"
+
+    if command -v hf &> /dev/null; then
+        echo "hf"
+        return 0
+    fi
+
+    if [ -x "$HOME/miniconda3/bin/hf" ]; then
+        echo "$HOME/miniconda3/bin/hf"
+        return 0
+    fi
+
+    if [ -x "$HOME/.local/bin/hf" ]; then
+        echo "$HOME/.local/bin/hf"
+        return 0
+    fi
+
+    if command -v huggingface-cli &> /dev/null; then
+        echo "huggingface-cli"
+        return 0
+    fi
+
+    if [ -x "$HOME/miniconda3/bin/huggingface-cli" ]; then
+        echo "$HOME/miniconda3/bin/huggingface-cli"
+        return 0
+    fi
+
+    if [ -x "$HOME/.local/bin/huggingface-cli" ]; then
+        echo "$HOME/.local/bin/huggingface-cli"
+        return 0
+    fi
+
+    log_info "安装 Hugging Face CLI..."
+    if pip install -q 'huggingface_hub[cli]' 2>/dev/null || pip install -q huggingface_hub 2>/dev/null; then
+        export PATH="$HOME/miniconda3/bin:$HOME/.local/bin:$PATH"
+        if command -v hf &> /dev/null; then
+            echo "hf"
+            return 0
+        fi
+        if [ -x "$HOME/miniconda3/bin/hf" ]; then
+            echo "$HOME/miniconda3/bin/hf"
+            return 0
+        fi
+        if [ -x "$HOME/.local/bin/hf" ]; then
+            echo "$HOME/.local/bin/hf"
+            return 0
+        fi
+        if command -v huggingface-cli &> /dev/null; then
+            echo "huggingface-cli"
+            return 0
+        fi
+        if [ -x "$HOME/miniconda3/bin/huggingface-cli" ]; then
+            echo "$HOME/miniconda3/bin/huggingface-cli"
+            return 0
+        fi
+        if [ -x "$HOME/.local/bin/huggingface-cli" ]; then
+            echo "$HOME/.local/bin/huggingface-cli"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+# 下载模型（使用 hf CLI + hf-mirror）
+download_model() {
+    local target_path="$1"
+    local expanded_path
+    local hf_cli
+    expanded_path=$(expand_path "$target_path")
+    
+    log_step "自动下载模型到: $target_path"
+    log_info "使用 hf CLI + hf-mirror 下载..."
+    
+    export HF_ENDPOINT=https://hf-mirror.com
+    export HF_HUB_ENABLE_HF_TRANSFER=0
+
+    mkdir -p "$expanded_path"
+
+    hf_cli=$(resolve_hf_cli) || {
+        log_error "未能安装或找到 Hugging Face CLI"
+        return 1
+    }
+
+    log_info "正在下载模型文件（约 1.3GB，请耐心等待）..."
+    if [[ "$hf_cli" == *"hf" ]] && [[ "$hf_cli" != *"huggingface-cli" ]]; then
+        if "$hf_cli" download dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO --local-dir "$expanded_path"; then
+            log_info "✓ 模型下载完成"
+            return 0
+        fi
+    elif "$hf_cli" download dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO --local-dir "$expanded_path" --local-dir-use-symlinks False; then
+        log_info "✓ 模型下载完成"
+        return 0
+    fi
+
+    log_error "模型下载失败"
+    return 1
 }
 
 update_model_path() {
+    # 如果没有指定模型路径，使用默认值
     if [ -z "$MODEL_PATH" ]; then
-        log_warn "未指定 --model-path，请稍后手动修改 audio_config.json"
-        return 0
+        MODEL_PATH="$DEFAULT_MODEL_PATH"
+        log_info "使用默认模型路径: $MODEL_PATH"
     fi
     
-    if [ ! -d "$MODEL_PATH" ]; then
-        log_warn "模型目录不存在: $MODEL_PATH，请检查路径"
-        return 0
+    # 展开路径（处理 ~）
+    local expanded_path
+    expanded_path=$(expand_path "$MODEL_PATH")
+    
+    # 检查模型是否存在
+    if [ ! -d "$expanded_path" ] || [ -z "$(ls -A "$expanded_path" 2>/dev/null)" ]; then
+        log_warn "模型目录不存在或为空: $MODEL_PATH"
+        
+        # 自动下载（非交互式环境默认下载）
+        log_info "自动下载模型..."
+        if ! download_model "$MODEL_PATH"; then
+            log_error "模型下载失败"
+            log_info "请手动下载："
+            log_info "  1. 访问: https://hf-mirror.com/dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO"
+            log_info "  2. 下载到: $MODEL_PATH"
+            return 0
+        fi
     fi
     
     log_step "配置模型路径: $MODEL_PATH"
+    
+    # 写入展开后的绝对路径，确保下游服务无需自行展开 ~
+    local config_path="$expanded_path"
     
     python3 << PYEOF
 import json
@@ -278,12 +414,12 @@ try:
     if 'qwen3_asr_ov' not in config:
         config['qwen3_asr_ov'] = {}
     
-    config['qwen3_asr_ov']['model'] = '$MODEL_PATH'
+    config['qwen3_asr_ov']['model'] = '$config_path'
     
     with open('./audio_config.json', 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
     
-    print("✓ 模型路径已更新")
+    print(f"✓ 模型路径已更新: $config_path")
 except Exception as e:
     print(f"✗ 更新失败: {e}")
     sys.exit(1)
@@ -292,55 +428,29 @@ PYEOF
 
 setup_openclaw() {
     local OPENCLAW_CONFIG="$HOME/.openclaw/openclaw.json"
-    
-    if [ ! -f "$OPENCLAW_CONFIG" ]; then
-        log_warn "未找到 OpenClaw 配置，跳过"
-        return 0
-    fi
-    
-    log_step "配置 OpenClaw..."
-    
-    if ! python3 -c "
-import json
-with open('$OPENCLAW_CONFIG', 'r') as f:
-    c = json.load(f)
-exit(0 if 'channels' in c and 'qqbot' in c['channels'] else 1)
-" 2>/dev/null; then
-        log_warn "OpenClaw 未配置 qqbot，跳过 STT 配置"
-        return 0
-    fi
-    
-    cp "$OPENCLAW_CONFIG" "$OPENCLAW_CONFIG.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
-    
-    python3 << PYEOF
-import json
-import sys
 
-try:
-    with open('$OPENCLAW_CONFIG', 'r', encoding='utf-8') as f:
-        config = json.load(f)
-    
-    if 'channels' not in config:
-        config['channels'] = {}
-    if 'qqbot' not in config['channels']:
-        config['channels']['qqbot'] = {}
-    
-    config['channels']['qqbot']['stt'] = {
-        "enabled": True,
-        "provider": "custom",
-        "baseUrl": "http://127.0.0.1:5001",
-        "model": "Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO",
-        "apiKey": "not-needed"
+    if [ ! -f "$OPENCLAW_CONFIG" ]; then
+        log_warn "未找到 OpenClaw 配置，跳过 OpenClaw 集成"
+        return 0
+    fi
+
+    log_step "配置 OpenClaw 集成（QQBot/Feishu/重复插件处理）..."
+
+    bash "$SKILL_DIR/configure_openclaw_integration.sh"
+    log_info "OpenClaw 集成配置完成"
+}
+
+auto_start_stack() {
+    if [ "$SKIP_START" -eq 1 ]; then
+        log_info "跳过自动启动（--skip-start）"
+        return 0
+    fi
+
+    log_step "自动启动 Xeon ASR 双服务..."
+    bash "$SKILL_DIR/start_all.sh" || {
+        log_warn "自动启动未完全成功，请手动检查 start_all.sh 输出"
+        return 0
     }
-    
-    with open('$OPENCLAW_CONFIG', 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=2, ensure_ascii=False)
-    
-    print("✓ STT 配置已更新")
-    print("  请启动服务后运行: openclaw gateway restart")
-except Exception as e:
-    print(f"✗ 配置失败: {e}")
-PYEOF
 }
 
 ensure_scripts_executable() {
@@ -353,6 +463,11 @@ ensure_scripts_executable() {
         chmod +x "$SKILL_DIR/stop_asr.sh"
         log_info "stop_asr.sh 已设为可执行"
     fi
+
+    if [ -f "$SKILL_DIR/configure_openclaw_integration.sh" ]; then
+        chmod +x "$SKILL_DIR/configure_openclaw_integration.sh"
+        log_info "configure_openclaw_integration.sh 已设为可执行"
+    fi
 }
 
 show_completion() {
@@ -362,29 +477,34 @@ show_completion() {
     echo "========================================"
     echo ""
     
+    echo -e "${BLUE}【模型配置】${NC}"
     if [ -z "$MODEL_PATH" ]; then
-        echo -e "${YELLOW}⚠ 尚未配置模型路径${NC}"
-        echo "请编辑配置文件："
-        echo "  $SKILL_DIR/audio_config.json"
-        echo "或重新运行："
-        echo "  ./setup_env.sh --model-path /path/to/model"
-        echo ""
-    else
-        echo -e "${GREEN}✓ 模型路径已配置${NC}"
+        MODEL_PATH="$DEFAULT_MODEL_PATH"
     fi
-    
-    echo -e "${BLUE}【服务管理命令】${NC}"
-    echo "  启动 Flask ASR:  ./start_asr.sh"
-    echo "  停止 Flask ASR:  ./stop_asr.sh"
-    echo "  查看状态:        ./stop_asr.sh status"
+    echo "  模型路径: $MODEL_PATH"
+    echo "  支持 ~ 表示用户主目录（适配 Docker）"
     echo ""
-    echo "  日志文件:        tail -f $SKILL_DIR/asr.log"
+    
+    echo -e "${BLUE}【启动方式】${NC}"
+    echo "  方式1 - 手动启动:"
+    echo "    ./start_asr.sh  # 启动 Flask ASR (5001)"
+    echo "    npm start       # 启动 ASR Skill (9001)"
+    echo ""
+    echo "  方式2 - 一键启动:"
+    echo "    ./start_all.sh  # 同时启动 5001 和 9001"
+    echo ""
+    echo "  方式3 - 仅修复 OpenClaw 集成:"
+    echo "    ./configure_openclaw_integration.sh"
+    echo ""
+    
+    echo -e "${BLUE}【管理命令】${NC}"
+    echo "  停止服务: ./stop_asr.sh"
+    echo "  查看日志: tail -f $SKILL_DIR/asr.log"
     echo ""
     
     if command -v openclaw &> /dev/null; then
-        echo -e "${BLUE}【OpenClaw 集成】${NC}"
-        echo "  启动 Skill:      npm start"
-        echo "  重启 Gateway:    openclaw gateway restart"
+        echo -e "${BLUE}【OpenClaw】${NC}"
+        echo "  重启 Gateway: openclaw gateway restart"
         echo ""
     fi
 }
@@ -396,8 +516,9 @@ main() {
     install_python_packages
     generate_config
     update_model_path
-    setup_openclaw
     ensure_scripts_executable
+    setup_openclaw
+    auto_start_stack
     show_completion
 }
 

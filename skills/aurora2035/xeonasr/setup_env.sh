@@ -6,6 +6,10 @@ set -euo pipefail
 unset PYENV_ROOT 2>/dev/null || true
 export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v "pyenv\|\.pyenv" | tr '\n' ':' | sed 's/:$//')
 
+# 强制使用 hf-mirror 加速 HuggingFace 下载（必须在任何下载操作之前设置）
+export HF_ENDPOINT=https://hf-mirror.com
+export HF_HUB_ENABLE_HF_TRANSFER=0  # 禁用 hf-transfer 确保使用标准下载
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -18,6 +22,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
 
 MODEL_PATH=""
+DEFAULT_MODEL_PATH="~/model/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO"
 FORCE=0
 SKIP_DEPS=0
 
@@ -151,10 +156,10 @@ generate_config() {
 }
 
 create_default_config() {
-    cat > audio_config.json << 'EOF'
+        cat > audio_config.json <<EOF
 {
   "qwen3_asr_ov": {
-    "model": "/path/to/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO",
+        "model": "$HOME/model/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO",
     "device": "CPU",
     "sample_rate": 16000,
     "language": "zh",
@@ -166,35 +171,179 @@ create_default_config() {
   }
 }
 EOF
-    log_info "已生成 audio_config.json"
+    log_info "已生成默认配置文件（模型路径: $HOME/model/...）"
+}
+
+# 展开路径中的 ~ 为实际路径
+expand_path() {
+    local path="$1"
+    if [[ "$path" == ~* ]]; then
+        path="${path/#\~/$HOME}"
+    fi
+    echo "$path"
+}
+
+# 解析可用的 Hugging Face CLI 命令
+resolve_hf_cli() {
+    export PATH="$HOME/miniconda3/bin:$HOME/.local/bin:$PATH"
+
+    if command -v hf &> /dev/null; then
+        echo "hf"
+        return 0
+    fi
+
+    if [ -x "$HOME/miniconda3/bin/hf" ]; then
+        echo "$HOME/miniconda3/bin/hf"
+        return 0
+    fi
+
+    if [ -x "$HOME/.local/bin/hf" ]; then
+        echo "$HOME/.local/bin/hf"
+        return 0
+    fi
+
+    if command -v huggingface-cli &> /dev/null; then
+        echo "huggingface-cli"
+        return 0
+    fi
+
+    if [ -x "$HOME/miniconda3/bin/huggingface-cli" ]; then
+        echo "$HOME/miniconda3/bin/huggingface-cli"
+        return 0
+    fi
+
+    if [ -x "$HOME/.local/bin/huggingface-cli" ]; then
+        echo "$HOME/.local/bin/huggingface-cli"
+        return 0
+    fi
+
+    log_info "安装 Hugging Face CLI..."
+    if pip install -q 'huggingface_hub[cli]' 2>/dev/null || pip install -q huggingface_hub 2>/dev/null; then
+        export PATH="$HOME/miniconda3/bin:$HOME/.local/bin:$PATH"
+        if command -v hf &> /dev/null; then
+            echo "hf"
+            return 0
+        fi
+        if [ -x "$HOME/miniconda3/bin/hf" ]; then
+            echo "$HOME/miniconda3/bin/hf"
+            return 0
+        fi
+        if [ -x "$HOME/.local/bin/hf" ]; then
+            echo "$HOME/.local/bin/hf"
+            return 0
+        fi
+        if command -v huggingface-cli &> /dev/null; then
+            echo "huggingface-cli"
+            return 0
+        fi
+        if [ -x "$HOME/miniconda3/bin/huggingface-cli" ]; then
+            echo "$HOME/miniconda3/bin/huggingface-cli"
+            return 0
+        fi
+        if [ -x "$HOME/.local/bin/huggingface-cli" ]; then
+            echo "$HOME/.local/bin/huggingface-cli"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+# 下载模型（使用 HF CLI + hf-mirror）
+download_model() {
+    local target_path="$1"
+    local expanded_path
+    local hf_cli
+    expanded_path=$(expand_path "$target_path")
+    
+    log_step "自动下载模型到：$target_path"
+    log_info "使用 HF CLI + hf-mirror 加速下载..."
+    
+    # 创建目录
+    mkdir -p "$expanded_path"
+    
+    # 设置环境变量（必须在任何下载操作之前）
+    export HF_ENDPOINT=https://hf-mirror.com
+    export HF_HUB_ENABLE_HF_TRANSFER=0
+    
+    hf_cli=$(resolve_hf_cli) || {
+        log_error "未能安装或找到 Hugging Face CLI"
+        return 1
+    }
+    
+    # 使用 HF CLI 下载模型
+    log_info "正在下载模型文件（约 1.3GB，请耐心等待）..."
+    if [[ "$hf_cli" == *"hf" ]] && [[ "$hf_cli" != *"huggingface-cli" ]]; then
+        if "$hf_cli" download dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO --local-dir "$expanded_path"; then
+            log_info "✓ 模型下载完成"
+            return 0
+        fi
+    elif "$hf_cli" download dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO --local-dir "$expanded_path" --local-dir-use-symlinks False; then
+        log_info "✓ 模型下载完成"
+        return 0
+    fi
+
+    log_error "模型下载失败"
+    return 1
 }
 
 update_model_path() {
+    # 如果没有指定模型路径，使用默认值
     if [ -z "$MODEL_PATH" ]; then
-        log_warn "未指定 --model-path，请稍后手动修改 audio_config.json"
-        return 0
+        MODEL_PATH="$DEFAULT_MODEL_PATH"
+        log_info "使用默认模型路径: $MODEL_PATH"
     fi
     
-    if [ ! -d "$MODEL_PATH" ]; then
-        log_warn "模型目录不存在: $MODEL_PATH"
-        return 0
+    # 展开路径（处理 ~）
+    local expanded_path
+    expanded_path=$(expand_path "$MODEL_PATH")
+    
+    # 检查模型是否存在
+    if [ ! -d "$expanded_path" ] || [ -z "$(ls -A "$expanded_path" 2>/dev/null)" ]; then
+        log_warn "模型目录不存在或为空: $MODEL_PATH"
+        
+        # 询问是否下载
+        read -p "是否自动下载模型？(Y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            if ! download_model "$MODEL_PATH"; then
+                log_error "模型下载失败"
+                log_info "请手动下载："
+                log_info "  1. 访问: https://hf-mirror.com/dseditor/Qwen3-ASR-0.6B-INT8_ASYM-OpenVINO"
+                log_info "  2. 下载到: $MODEL_PATH"
+                return 0
+            fi
+        else
+            log_warn "跳过模型下载，请稍后手动配置"
+            return 0
+        fi
     fi
     
     log_step "配置模型路径: $MODEL_PATH"
+    
+    # 写入展开后的绝对路径，确保下游服务无需自行展开 ~
+    local config_path="$expanded_path"
+    
     ./venv/bin/python << PYEOF
 import json
+import sys
+
 try:
-    with open('./audio_config.json', 'r') as f:
+    with open('./audio_config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
+    
     if 'qwen3_asr_ov' not in config:
         config['qwen3_asr_ov'] = {}
-    config['qwen3_asr_ov']['model'] = '$MODEL_PATH'
-    with open('./audio_config.json', 'w') as f:
+    
+    config['qwen3_asr_ov']['model'] = '$config_path'
+    
+    with open('./audio_config.json', 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
-    print("✓ 模型路径已更新")
+    
+    print(f"✓ 模型路径已更新: $config_path")
 except Exception as e:
-    print(f"✗ 失败: {e}")
-    exit(1)
+    print(f"✗ 更新失败: {e}")
+    sys.exit(1)
 PYEOF
 }
 
@@ -306,31 +455,26 @@ show_completion() {
     echo "========================================"
     echo ""
     
+    echo -e "${BLUE}【模型配置】${NC}"
     if [ -z "$MODEL_PATH" ]; then
-        echo -e "${YELLOW}⚠ 尚未配置模型路径${NC}"
-        echo "编辑: $SKILL_DIR/audio_config.json"
-        echo ""
-    else
-        echo -e "${GREEN}✓ 模型路径已配置${NC}"
+        MODEL_PATH="$DEFAULT_MODEL_PATH"
     fi
-    
-    echo -e "${BLUE}【配置文件】${NC}"
-    echo "  Python配置: audio_config.json"
-    echo "  Node配置:   config.json (从 example 复制)"
+    echo "  模型路径: $MODEL_PATH"
+    echo "  支持 ~ 表示用户主目录（适配 Docker）"
     echo ""
     
-    echo -e "${BLUE}【服务架构】${NC}"
-    echo "  5001: Flask ASR (Python) - 模型推理"
-    echo "  9001: ASR Skill (Node.js) - QQ 语音网关"
+    echo -e "${BLUE}【启动方式】${NC}"
+    echo "  方式1 - 手动启动:"
+    echo "    ./start_asr_service.sh  # 启动 Flask ASR (5001)"
+    echo "    npm start               # 启动 ASR Skill (9001)"
     echo ""
-    echo -e "${BLUE}【启动步骤】${NC}"
-    echo "  1. ./start_asr_service.sh   (启动 5001)"
-    echo "  2. npm start        (启动 9001)"
-    echo "  3. ./start_all.sh        (同时启动 5001 9001)"
-    echo "" 
+    echo "  方式2 - 一键启动:"
+    echo "    ./start_all.sh          # 同时启动 5001 和 9001"
+    echo ""
+    
     echo -e "${BLUE}【管理命令】${NC}"
-    echo "  停止 Flask: ./stop_asr.sh"
-    echo "  查看日志:   tail -f $SKILL_DIR/asr.log"
+    echo "  停止服务: ./stop_asr.sh"
+    echo "  查看日志: tail -f $SKILL_DIR/asr.log"
     echo ""
     
     if command -v openclaw &> /dev/null; then

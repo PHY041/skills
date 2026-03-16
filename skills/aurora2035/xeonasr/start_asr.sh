@@ -20,6 +20,8 @@ cd "$SCRIPT_DIR"
 PID_FILE="$SCRIPT_DIR/asr.pid"
 LOG_FILE="$SCRIPT_DIR/asr.log"
 CONFIG_FILE="$SCRIPT_DIR/audio_config.json"
+RUNTIME_CONFIG_FILE="$CONFIG_FILE"
+RUNTIME_CONFIG_TEMP="$SCRIPT_DIR/audio_config.runtime.json"
 VENV_DIR="$SCRIPT_DIR/venv"
 PORT=5001
 
@@ -39,14 +41,14 @@ check_xdp() {
     
     # 优先检测 xdp-asr-service（你环境中的实际命令）
     if [ -f "$VENV_DIR/bin/xdp-asr-service" ]; then
-        START_CMD="$VENV_DIR/bin/xdp-asr-service --config $CONFIG_FILE"
+        START_BIN="$VENV_DIR/bin/xdp-asr-service"
         log_info "发现启动命令: xdp-asr-service"
         return 0
     fi
     
     # 备选：检测 xdp-asr-server
     if [ -f "$VENV_DIR/bin/xdp-asr-server" ]; then
-        START_CMD="$VENV_DIR/bin/xdp-asr-server --config $CONFIG_FILE"
+        START_BIN="$VENV_DIR/bin/xdp-asr-server"
         log_info "发现启动命令: xdp-asr-server"
         return 0
     fi
@@ -62,13 +64,48 @@ check_config() {
         log_error "配置文件不存在: $CONFIG_FILE"
         exit 1
     fi
-    
-    MODEL_PATH=$("$VENV_DIR/bin/python" -c "
+
+    local config_info
+    config_info=$("$VENV_DIR/bin/python" <<PYEOF 2>/dev/null || true
 import json
-with open('$CONFIG_FILE', 'r') as f:
+import os
+import sys
+from pathlib import Path
+
+config_path = Path(r"$CONFIG_FILE")
+runtime_path = Path(r"$RUNTIME_CONFIG_TEMP")
+
+with config_path.open('r', encoding='utf-8') as f:
     config = json.load(f)
-print(config.get('qwen3_asr_ov', {}).get('model', ''))
-" 2>/dev/null || echo "")
+
+model = str(config.get('qwen3_asr_ov', {}).get('model', '') or '').strip()
+if not model:
+    print('')
+    print(config_path)
+    sys.exit(0)
+
+expanded = os.path.expandvars(os.path.expanduser(model))
+
+if model != expanded:
+    config.setdefault('qwen3_asr_ov', {})['model'] = expanded
+    with runtime_path.open('w', encoding='utf-8') as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+    print(expanded)
+    print(runtime_path)
+else:
+    if runtime_path.exists():
+        runtime_path.unlink()
+    print(expanded)
+    print(config_path)
+PYEOF
+)
+
+    MODEL_PATH=$(printf '%s\n' "$config_info" | sed -n '1p')
+    RUNTIME_CONFIG_FILE=$(printf '%s\n' "$config_info" | sed -n '2p')
+
+    if [ -z "$RUNTIME_CONFIG_FILE" ]; then
+        RUNTIME_CONFIG_FILE="$CONFIG_FILE"
+    fi
     
     if [ -z "$MODEL_PATH" ] || [ "$MODEL_PATH" == "None" ] || [[ "$MODEL_PATH" == "/path/to/"* ]]; then
         log_error "模型路径未配置，请编辑: $CONFIG_FILE"
@@ -81,6 +118,9 @@ print(config.get('qwen3_asr_ov', {}).get('model', ''))
     fi
     
     log_info "模型路径: $MODEL_PATH"
+    if [ "$RUNTIME_CONFIG_FILE" != "$CONFIG_FILE" ]; then
+        log_info "检测到旧格式路径，运行时使用兼容配置: $RUNTIME_CONFIG_FILE"
+    fi
 }
 
 check_port() {
@@ -101,8 +141,8 @@ check_environment() {
     echo "  ASR 服务环境检测"
     echo "========================================"
     check_venv
-    check_xdp
     check_config
+    check_xdp
     check_port
     echo ""
     log_info "✓ 环境检测全部通过"
@@ -124,6 +164,8 @@ start_service() {
         fi
         rm -f "$PID_FILE"
     fi
+
+    START_CMD="$START_BIN --config $RUNTIME_CONFIG_FILE"
     
     log_info "启动命令: $START_CMD"
     log_info "日志文件: $LOG_FILE"
