@@ -139,7 +139,7 @@ openclaw gateway restart
 
 User must edit:
 - `shared/decisions/active.md` -- strategy, priorities
-- `shared/products/_index.md` -- products, keywords, competitors (include code directory paths!)
+- `shared/products/_index.md` -- products overview (≤5 lines per product: URL, code path, positioning, tech, status). Detailed info goes in each product's `overview.md`.
 - `shared/knowledge/competitor-map.md` -- competitor analysis
 - `shared/knowledge/tech-standards.md` -- coding standards
 
@@ -260,14 +260,38 @@ Agents can deeply understand each SaaS product through automated code scanning. 
 2. Product Lead triggers a Deep Dive scan by messaging Fullstack Dev via inbox
 3. Fullstack Dev enters the project directory (read-only) and scans the codebase
 4. Knowledge files are generated in `shared/products/{product}/`
-5. All agents read these files before making product-related decisions
+5. All agents consume these files **via manifest-based lazy loading** (never read all at once)
+
+### Manifest-Based Lazy Loading (MANDATORY)
+
+Each product directory includes a `manifest.json` (~200 tokens) that lists all files with one-line summaries and a `taskFileMap` mapping task types to relevant files.
+
+**Agent workflow:**
+1. Read `_index.md` → identify which product
+2. Read `{product}/manifest.json` → see all files + summaries (~200 tokens)
+3. Based on `taskFileMap` or summaries, read only 1-3 relevant files
+4. Never read more than 5 product files per session
+
+**Why:** With 15+ products × 20 files each, full loading = 40K+ tokens per product. Manifest loading = 200 tokens + only what's needed.
+
+**Fullstack Dev MUST regenerate `manifest.json`** after every scan (L0-L4). Template in `_template/manifest.json`.
+
+### Manifest Quality Standards
+
+摘要不能为了省 token 丢掉关键信息。每条摘要须满足：
+- **核心文件**（database/models/services/routes/integrations）：50-130字，列出关键实体名/数量/域名
+- **中等文件**（auth/frontend/commands/config）：30-80字，点明方案和范围
+- **轻量文件**（changelog/notes/metrics）：可以短（<20字）
+- **taskFileMap**：必须覆盖该产品的所有核心业务场景（不少于8个映射）
+- **codeStats**：必须包含文件数、行数、模型数、表数等量化指标
 
 ### Product Knowledge Directory
 
-Each product gets a knowledge directory with up to 20 files:
+Each product gets a knowledge directory with up to 20 files + manifest:
 
 ```
 shared/products/{product}/
+├── manifest.json        ← **INDEX** (~200 tokens): file list, summaries, taskFileMap
 ├── overview.md          ← Product positioning (from _index.md)
 ├── architecture.md      ← System architecture, tech stack, design patterns, layering
 ├── database.md          ← Full table schema, relationships, indexes, migrations
