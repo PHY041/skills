@@ -3,11 +3,16 @@
   "slug": "xtquant",
   "displayName": "xtquant",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773364991566,
-    "commit": "https://github.com/openclaw/skills/commit/d88bb162eec5cc26def96f4d40c8a1d5a47ffabe"
+    "version": "1.0.2",
+    "publishedAt": 1773643596553,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773364991566,
+      "commit": "https://github.com/openclaw/skills/commit/d88bb162eec5cc26def96f4d40c8a1d5a47ffabe"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1773222847775,

@@ -1,12 +1,12 @@
 ---
 name: xtquant
-description: XtQuant QMT Python SDK — Integrates market data (xtdata) and trading interfaces (xttrade), supporting A-shares, futures, options, and other Chinese securities markets.
-version: 1.1.0
+description: XtQuant QMT Python SDK - 集成行情数据(xtdata)和交易接口(xttrade)，支持A股、期货、期权等中国证券市场。
+version: 1.2.0
 homepage: http://dict.thinktrader.net/nativeApi/start_now.html
 metadata: {"clawdbot":{"emoji":"⚡","requires":{"bins":["python3"]}}}
 ---
 
-# XtQuant (QMT Python SDK by ThinkTrader)
+# XtQuant（迅投QMT Python SDK）
 
 XtQuant is the Python SDK for the [QMT/miniQMT](http://www.thinktrader.net) quantitative trading platform, developed by ThinkTrader (XunTou Technology). It contains two core modules:
 
@@ -15,7 +15,7 @@ XtQuant is the Python SDK for the [QMT/miniQMT](http://www.thinktrader.net) quan
 
 > ⚠️ **Requires miniQMT or QMT client running on Windows**. XtQuant connects to the QMT process via local TCP. You need QMT/miniQMT access enabled by your broker.
 
-## Installation
+## 安装
 
 ```bash
 pip install xtquant
@@ -23,7 +23,7 @@ pip install xtquant
 
 You can also download from the official website: http://dict.thinktrader.net/nativeApi/download_xtquant.html
 
-## Architecture Overview
+## 架构概述
 
 ```
 Your Python script (any IDE, any Python version)
@@ -34,7 +34,7 @@ Your Python script (any IDE, any Python version)
     Broker trading system
 ```
 
-## Core Module Reference
+## 核心模块参考
 
 | Module | Import | Purpose |
 |---|---|---|
@@ -45,7 +45,7 @@ Your Python script (any IDE, any Python version)
 
 ---
 
-## Quick Start — Market Data
+## 快速入门 — 行情数据
 
 
 ```python
@@ -64,12 +64,12 @@ data = xtdata.get_market_data_ex(
     period='1d',
     start_time='20240101',
     end_time='20240630',
-    dividend_type='front'  # Adjustment type: none (unadjusted), front (forward-adjusted), back (backward-adjusted), front_ratio (proportional forward), back_ratio (proportional backward)
+    dividend_type='front'  # 复权类型: none (unadjusted), front (forward-adjusted), back (backward-adjusted), front_ratio (proportional forward), back_ratio (proportional backward)
 )
 print(data['000001.SZ'])
 ```
 
-### Real-Time Quote Subscription
+### 实时行情订阅
 
 ```python
 def on_data(datas):
@@ -86,7 +86,7 @@ xtdata.subscribe_whole_quote(['SH', 'SZ'], callback=on_data)
 xtdata.run()  # Block the current thread, continuously receiving callback data
 ```
 
-### Financial Data
+### 财务数据
 
 ```python
 # First download financial data to local cache
@@ -98,7 +98,7 @@ data = xtdata.get_financial_data(['000001.SZ'])
 # TOP10FLOWHOLDER (top 10 tradable shareholders), SHAREHOLDER (shareholder count)
 ```
 
-### Instrument Info & Sectors
+### 合约信息与板块
 
 ```python
 # Get detailed instrument info (name, price limits, tick size, etc.)
@@ -113,7 +113,7 @@ days = xtdata.get_trading_dates('SH', start_time='20240101', end_time='20240630'
 
 ---
 
-## Quick Start — Trading
+## 快速入门 — 交易
 
 ```python
 from xtquant import xtconstant
@@ -140,7 +140,7 @@ class MyCallback(XtQuantTraderCallback):
 
 xt_trader.register_callback(MyCallback())
 xt_trader.start()
-connect_result = xt_trader.connect()  # Returns 0 on successful connection
+connect_result = xt_trader.connect()  # 收益率 0 on successful connection
 
 # Create an account object and subscribe to push notifications
 account = StockAccount('your_account_id')
@@ -151,9 +151,9 @@ order_id = xt_trader.order_stock(
     account, '600000.SH', xtconstant.STOCK_BUY, 1000,
     xtconstant.FIX_PRICE, 10.5, 'strategy1', 'test_order'
 )
-# Returns order_id > 0 on success, -1 on failure
+# 收益率 order_id > 0 on success, -1 on failure
 
-# Query positions
+# 查询持仓
 positions = xt_trader.query_stock_positions(account)
 for pos in positions:
     print(pos.stock_code, pos.volume, pos.can_use_volume, pos.market_value)
@@ -165,7 +165,7 @@ orders = xt_trader.query_stock_orders(account)
 asset = xt_trader.query_stock_asset(account)
 print(f'Available cash: {asset.cash}, Total assets: {asset.total_asset}')
 
-# Cancel order
+# 撤单
 xt_trader.cancel_order_stock(account, order_id)
 
 # Block the main thread, waiting for callbacks
@@ -174,7 +174,7 @@ xt_trader.run_forever()
 
 ---
 
-## Stock Code Format
+## 股票代码格式
 
 | Market | Format | Example |
 |---|---|---|
@@ -194,11 +194,11 @@ xt_trader.run_forever()
 | Convertible Bonds | `XXXXXX.SH/SZ` | `113050.SH` |
 
 
-## Data Periods
+## 数据周期
 
 `tick`, `1m`, `5m`, `15m`, `30m`, `1h`, `1d`, `1w`, `1mon`
 
-## Supported Asset Types
+## 支持的资产类型
 
 | Asset | Market Data (xtdata) | Trading (xttrade) |
 |---|---|---|
@@ -211,7 +211,7 @@ xt_trader.run_forever()
 | Funds | ✅ K-lines, tick | ✅ Buy/Sell |
 | Margin Trading | ✅ Via credit account | ✅ Full credit trading |
 
-## Order Type Constants (xtconstant)
+## 订单类型常量（xtconstant）
 
 | Category | Constants |
 |---|---|
@@ -221,7 +221,7 @@ xt_trader.run_forever()
 | **Options** | `STOCK_OPTION_BUY_OPEN` (buy to open), `STOCK_OPTION_SELL_CLOSE` (sell to close), `STOCK_OPTION_EXERCISE` (exercise), etc. |
 | **Price Type** | `FIX_PRICE` (11, limit), `ANY_PRICE` (12, market), `LATEST_PRICE` (5, latest price), `MARKET_PEER_PRICE_FIRST` (best counterparty price), etc. |
 
-## Account Types
+## 账户类型
 
 ```python
 StockAccount('id')            # Regular stock account
@@ -229,7 +229,7 @@ StockAccount('id', 'CREDIT')  # Credit account (margin trading)
 StockAccount('id', 'FUTURE')  # Futures account
 ```
 
-## xtdata Interface Pattern
+## xtdata接口模式
 
 The market data module follows a unified **download → retrieve** pattern:
 
@@ -237,7 +237,7 @@ The market data module follows a unified **download → retrieve** pattern:
 2. **Download** (download): `download_history_data`, `download_financial_data` — download from server to local cache (synchronous/blocking)
 3. **Retrieve** (get): `get_market_data_ex`, `get_financial_data` — read from local cache (fast)
 
-## xttrade Callback System
+## xttrade回调系统
 
 Register an `XtQuantTraderCallback` subclass to receive real-time push notifications:
 
@@ -252,7 +252,7 @@ Register an `XtQuantTraderCallback` subclass to receive real-time push notificat
 | `on_disconnected()` | — | Connection lost |
 | `on_order_stock_async_response(resp)` | XtOrderResponse | Async order response |
 
-## Advanced Features
+## 高级功能
 
 - **Smart Algorithm Trading**: Execute algorithmic orders such as VWAP via `smart_algo_order_async`
 - **Securities Lending**: Query available securities, apply for lending, manage contracts
@@ -261,7 +261,7 @@ Register an `XtQuantTraderCallback` subclass to receive real-time push notificat
 - **Custom Sectors**: Create, manage, and query custom stock groups
 - **Level 2 Data**: l2quote, l2order, l2transaction, l2quoteaux, l2orderqueue, l2thousand (1000-level order book), limitupperformance (consecutive limit-up tracking), snapshotindex, hfiopv, fullspeedorderbook
 
-## Usage Tips
+## 使用技巧
 
 - **miniQMT must be running on Windows** — xtquant connects via local TCP.
 - `session_id` must be unique per strategy — different strategies need different IDs.
@@ -274,9 +274,9 @@ Register an `XtQuantTraderCallback` subclass to receive real-time push notificat
 
 ---
 
-## Advanced Examples
+## 进阶示例
 
-### Batch Download Full-Market Daily K-Line Data
+### 批量下载全市场日K线数据
 
 ```python
 from xtquant import xtdata
@@ -309,7 +309,7 @@ for code, df in data.items():
 ```
 
 
-### Real-Time Quote Monitoring + Conditional Order Trigger
+### 实时行情监控 + 条件触发下单
 
 ```python
 from xtquant import xtdata, xtconstant
@@ -379,7 +379,7 @@ t.start()
 xt_trader.run_forever()
 ```
 
-### Multi-Stock Moving Average Strategy
+### 多股票均线策略
 
 ```python
 from xtquant import xtdata, xtconstant
@@ -412,9 +412,9 @@ for stock in stock_pool:
         latest = df.iloc[-1]
         prev = df.iloc[-2]
         if prev['ma5'] <= prev['ma20'] and latest['ma5'] > latest['ma20']:
-            signals[stock] = 'BUY'   # Golden cross
+            signals[stock] = 'BUY'   # 金叉
         elif prev['ma5'] >= prev['ma20'] and latest['ma5'] < latest['ma20']:
-            signals[stock] = 'SELL'  # Death cross
+            signals[stock] = 'SELL'  # 死叉
         else:
             signals[stock] = 'HOLD'  # Hold
 
@@ -423,7 +423,7 @@ for stock, signal in signals.items():
     print(f"  {stock}: {signal}")
 ```
 
-### Retrieve Financial Data and Screen Stocks
+### 获取财务数据并筛选股票
 
 ```python
 from xtquant import xtdata
@@ -452,6 +452,6 @@ for stock in stock_list[:10]:
 
 ## 社区与支持
 
-由 **大佬量化 (Boss Quant)** 维护 — 量化交易教学与策略研发团队。
+由 **大佬量化 (BossQuant)** 维护 — 量化交易教学与策略研发团队。
 
-微信客服: **bossquant1** · [Bilibili](https://space.bilibili.com/48693330) · 搜索 **大佬量化** on 微信公众号 / Bilibili / 抖音
+微信客服: **bossquant1** · [Bilibili](https://space.bilibili.com/48693330) · 搜索 **大佬量化** — 微信公众号 / Bilibili / 抖音
