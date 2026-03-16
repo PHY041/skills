@@ -1,13 +1,18 @@
 {
   "owner": "ghuron",
   "slug": "magister",
-  "displayName": "Magister.net",
+  "displayName": "magister.net",
   "latest": {
-    "version": "1.0.4",
-    "publishedAt": 1773391090861,
-    "commit": "https://github.com/openclaw/skills/commit/e49ef3c4d3d61d212885221a459950e7ec2c9862"
+    "version": "1.1.0",
+    "publishedAt": 1773664357580,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.4",
+      "publishedAt": 1773391090861,
+      "commit": "https://github.com/openclaw/skills/commit/e49ef3c4d3d61d212885221a459950e7ec2c9862"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1773326187176,
