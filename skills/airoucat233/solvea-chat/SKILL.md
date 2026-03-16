@@ -1,6 +1,6 @@
 ---
 name: solvea-chat
-version: 0.3.6
+version: 0.4.0
 description: Call Solvea Web App chat API to get AI customer service replies. Use for real customer-service questions. On session boot message ("new session was started"), call with --mark-reset (no peer-id needed). For normal messages, call with --peer-id and --message. Never call for other slash-prefixed commands.
 metadata:
   openclaw:

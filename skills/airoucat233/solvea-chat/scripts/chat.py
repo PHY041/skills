@@ -12,7 +12,7 @@ Solvea Chat CLI
     失败: 错误信息打印到 stderr，exit code 非 0
 """
 
-__version__ = "0.3.6"
+__version__ = "0.4.0"
 import argparse
 import json
 import logging
@@ -25,6 +25,7 @@ _WORKSPACE_ROOT = Path(__file__).parents[3]
 SESSIONS_FILE = _WORKSPACE_ROOT / "memory" / "solvea-sessions.json"
 RESET_MARKER  = _WORKSPACE_ROOT / "memory" / "solvea-reset-pending"
 LOG_FILE      = _WORKSPACE_ROOT / "memory" / "solvea-chat.log"
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
     filename=LOG_FILE,

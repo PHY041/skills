@@ -23,12 +23,12 @@ def _require_env(name: str) -> str:
     return value
 
 
-_SOLVEA_BASE_URL = "https://desk.shulex.com"
+_SOLVEA_BASE_URL_DEFAULT = "https://apps.voc.ai"
 
 
 class SolveaClient:
     def __init__(self):
-        self.base_url = _SOLVEA_BASE_URL
+        self.base_url = os.getenv("SOLVEA_BASE_URL", _SOLVEA_BASE_URL_DEFAULT)
         self.api_key = _require_env("SOLVEA_API_KEY")
         self.agent_id = int(_require_env("SOLVEA_AGENT_ID"))
         self.headers = {

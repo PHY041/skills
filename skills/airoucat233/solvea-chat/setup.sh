@@ -174,35 +174,17 @@ PYEOF
 )
 fi
 
-# ── 4. 初始化 workspace（新建时）────────────────────────────────────────────
-if [ "$CREATE_NEW" = true ]; then
-    if [ -d "$AGENT_WORKSPACE" ] && [ "$DRY_RUN" = false ]; then
-        echo ""
-        echo "⚠ workspace 已存在: $AGENT_WORKSPACE"
-        echo -n "  是否覆盖？原有文件将被清除 [y/N]: "
-        read overwrite_ws
-        case "$overwrite_ws" in
-            [yY]|[yY][eE][sS])
-                rm -rf "$AGENT_WORKSPACE"
-                ;;
-            *)
-                echo "跳过 workspace 初始化"
-                ;;
-        esac
-    fi
-    if [ ! -d "$AGENT_WORKSPACE" ] || [ "$DRY_RUN" = true ]; then
-        echo ""
-        echo "→ 初始化 workspace: $AGENT_WORKSPACE"
-        if [ "$DRY_RUN" = false ]; then
-            mkdir -p "$AGENT_WORKSPACE/memory"
-        fi
-        render_template "$TEMPLATES_DIR/IDENTITY.md" "$AGENT_WORKSPACE/IDENTITY.md"
-        render_template "$TEMPLATES_DIR/AGENTS.md"   "$AGENT_WORKSPACE/AGENTS.md"
-        render_template "$TEMPLATES_DIR/SOUL.md"     "$AGENT_WORKSPACE/SOUL.md"
-        render_template "$TEMPLATES_DIR/USER.md"     "$AGENT_WORKSPACE/USER.md"
-        echo "✓ workspace 初始化完成"
-    fi
+# ── 4. 写入 workspace 配置文件 ───────────────────────────────────────────────
+echo ""
+echo "→ 写入 workspace 配置: $AGENT_WORKSPACE"
+if [ "$DRY_RUN" = false ]; then
+    mkdir -p "$AGENT_WORKSPACE/memory"
 fi
+render_template "$TEMPLATES_DIR/IDENTITY.md" "$AGENT_WORKSPACE/IDENTITY.md"
+render_template "$TEMPLATES_DIR/AGENTS.md"   "$AGENT_WORKSPACE/AGENTS.md"
+render_template "$TEMPLATES_DIR/SOUL.md"     "$AGENT_WORKSPACE/SOUL.md"
+render_template "$TEMPLATES_DIR/USER.md"     "$AGENT_WORKSPACE/USER.md"
+echo "✓ workspace 配置完成"
 
 # ── 5. 将 skill 复制到 agent workspace ───────────────────────────────────────
 TARGET_SKILL_DIR="$AGENT_WORKSPACE/skills/solvea-chat"
@@ -287,6 +269,8 @@ else
         cat > "$TARGET_SKILL_DIR/.env" <<EOF
 SOLVEA_API_KEY=${api_key}
 SOLVEA_AGENT_ID=${solvea_agent_id}
+# 可选：自定义 API 地址，留空使用默认值 https://apps.voc.ai
+SOLVEA_BASE_URL=https://apps.voc.ai
 EOF
         echo "✓ 写入 $TARGET_SKILL_DIR/.env"
     fi
