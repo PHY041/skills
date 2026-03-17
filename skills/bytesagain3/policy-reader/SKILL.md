@@ -1,7 +1,9 @@
 ---
+version: "2.0.0"
 name: policy-reader
 description: "政策解读助手。政策文件摘要、要点提取、影响分析、合规建议。Policy reader with document summary, key points extraction, impact anal. Use when you need policy reader capabilities. Triggers on: policy reader."
   政策解读助手。政策文件摘要、要点提取、影响分析、合规建议。Policy reader with document summary, key points extraction, impact analysis. 政策解读、法规解读、行业政策。Use when understanding government policies.
+author: BytesAgain
 ---
 # policy-reader
 
@@ -14,8 +16,6 @@ description: "政策解读助手。政策文件摘要、要点提取、影响分
 | 时间 | 数小时 | 几分钟 |
 | 专业度 | 取决于经验 | 专业级输出 |
 | 一致性 | 易遗漏 | 标准化模板 |
-
-
 
 ## 专业建议
 
@@ -30,3 +30,17 @@ description: "政策解读助手。政策文件摘要、要点提取、影响分
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
+
+## Examples
+
+```bash
+# Show help
+policy-reader help
+
+# Run
+policy-reader run
+```
+
+## Commands
+
+Run `policy-reader help` to see all available commands.

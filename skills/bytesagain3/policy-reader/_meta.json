@@ -3,9 +3,15 @@
   "slug": "policy-reader",
   "displayName": "Policy Reader",
   "latest": {
-    "version": "2.3.0",
-    "publishedAt": 1773447787113,
-    "commit": "https://github.com/openclaw/skills/commit/f85187d4dd4d025e117122baa5132ba441ffa23c"
+    "version": "1.0.5",
+    "publishedAt": 1773666770442,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.3.0",
+      "publishedAt": 1773447787113,
+      "commit": "https://github.com/openclaw/skills/commit/f85187d4dd4d025e117122baa5132ba441ffa23c"
+    }
+  ]
 }
