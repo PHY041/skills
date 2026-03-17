@@ -1,0 +1,11 @@
+{
+  "owner": "jolestar",
+  "slug": "telegram-openapi-skill",
+  "displayName": "Telegram OpenAPI Skill",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773587241661,
+    "commit": null
+  },
+  "history": []
+}
