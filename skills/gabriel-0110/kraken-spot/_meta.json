@@ -1,0 +1,11 @@
+{
+  "owner": "gabriel-0110",
+  "slug": "kraken-spot",
+  "displayName": "Kraken CLI",
+  "latest": {
+    "version": "1.2.0",
+    "publishedAt": 1773507668744,
+    "commit": null
+  },
+  "history": []
+}
