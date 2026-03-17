@@ -20,7 +20,7 @@
 
 ---
 
-## 提前准备：拉取 / 准备镜像
+## 提前准备
 
 > 💡 **建议在正式开始升级操作前，提前在每台微服务节点完成镜像拉取或导入，避免升级时等待。**
 
@@ -50,6 +50,8 @@ crictl images | grep mingdaoyun-hap
 |------|----------|
 | HAP 微服务（AMD64） | `https://pdpublic.mingdao.com/private-deployment/offline/mingdaoyun-hap-linux-amd64-{目标版本号}.tar.gz` |
 | HAP 微服务（ARM64） | `https://pdpublic.mingdao.com/private-deployment/offline/mingdaoyun-hap-linux-arm64-{目标版本号}.tar.gz` |
+| MongoDB 预置数据包 | `https://pdpublic.mingdao.com/private-deployment/data/preset_mongodb_{该操作涉及的最新版本号}.tar.gz` |
+| MongoDB 预置脚本 | `https://pdpublic.mingdao.com/private-deployment/data/preset_mongodb_docker.sh` |
 
 > 💡 如需其他组件的离线包，访问 https://docs-pd.mingdao.com/deployment/offline 获取，修改 URL 中的版本号即可下载历史版本。
 
@@ -158,24 +160,21 @@ db.createUser({ user: "修改成与其他库一致的用户名", pwd: "修改成
 
 #### 4. MongoDB 预置数据更新
 
-> 💡 此操作可在**原版本服务运行状态下**执行，无需停机。跨多版本时只需执行目标版本一次。
+> 💡 此操作可在**原版本服务运行状态下**执行，无需停机。
+> ⚠️ **注意**：如果升级路径中多个版本包含此操作，只需执行其中**版本号最大的那一个**即可。
 > 以下 `default` 为默认命名空间，请根据实际命名空间修改。
 
 {--- 联网模式 ---}
 
 ```bash
-bash -c "$(curl -fsSL https://pdpublic.mingdao.com/private-deployment/data/preset_mongodb_k8s.sh)" -s {目标版本号} default
+bash -c "$(curl -fsSL https://pdpublic.mingdao.com/private-deployment/data/preset_mongodb_k8s.sh)" -s {该操作涉及的最新版本号} default
 ```
 
 {--- 离线模式 ---}
 
 ```bash
-# 在可访问互联网的机器上提前下载（下载完成后上传到服务器）
-# wget https://pdpublic.mingdao.com/private-deployment/data/preset_mongodb_{目标版本号}.tar.gz
-
-# 在服务器上执行（default 替换为实际命名空间）
-wget https://pdpublic.mingdao.com/private-deployment/data/preset_mongodb_k8s.sh
-bash ./preset_mongodb_k8s.sh {目标版本号} default ./preset_mongodb_{目标版本号}.tar.gz
+# 将提前下载好的 preset_mongodb_docker.sh 和 preset_mongodb_{该操作涉及的最新版本号}.tar.gz 上传至控制节点同一目录下后执行（default 替换为实际命名空间）
+bash ./preset_mongodb_k8s.sh {该操作涉及的最新版本号} default ./preset_mongodb_{该操作涉及的最新版本号}.tar.gz
 ```
 
 ---
@@ -284,4 +283,4 @@ kubectl get pods -n default
 
 ---
 
-💡 声明：本文档内容由 AI 生成。尽管已努力确保信息的合理性，但 AI 模型仍可能产生不准确、过时或存在偏差的内容。请在执行关键操作前，务必对照[官方文档](https://docs-pd.mingdao.com)进行核实校验。
+💡 声明：内容由 AI 生成。尽管已努力确保信息的合理性，但 AI 模型仍可能产生不准确、过时或存在偏差的内容。请在执行关键操作前，务必对照[官方文档](https://docs-pd.mingdao.com)进行核实校验。

@@ -3,9 +3,15 @@
   "slug": "hap-upgrade",
   "displayName": "hap-upgrade",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773509051229,
-    "commit": "https://github.com/openclaw/skills/commit/adea45c99b8cd94a2850cc839b77f64abf38b114"
+    "version": "1.0.3",
+    "publishedAt": 1773639038916,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773509051229,
+      "commit": "https://github.com/openclaw/skills/commit/adea45c99b8cd94a2850cc839b77f64abf38b114"
+    }
+  ]
 }
