@@ -3,11 +3,16 @@
   "slug": "whatsmolt",
   "displayName": "WhatsMolt",
   "latest": {
-    "version": "2.0.2",
-    "publishedAt": 1770012810661,
-    "commit": "https://github.com/clawdbot/skills/commit/5e35f5025dea2be91e2ca0df1dd5de2fa4ec1136"
+    "version": "2.1.0",
+    "publishedAt": 1773767521565,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.0.2",
+      "publishedAt": 1770012810661,
+      "commit": "https://github.com/clawdbot/skills/commit/5e35f5025dea2be91e2ca0df1dd5de2fa4ec1136"
+    },
     {
       "version": "2.0.1",
       "publishedAt": 1769941105628,
