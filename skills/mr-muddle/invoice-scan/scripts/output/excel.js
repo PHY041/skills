@@ -49,6 +49,7 @@ const COLUMNS = [
   'Discount',
   // ── Totals ──
   'Net Total',
+  'Shipping / Delivery',
   'VAT Total',
   'Gross Total',
   // ── Validation / metadata ──
@@ -108,6 +109,7 @@ function buildRow(invoice, li, lineIdx) {
     li.discount,
     // Totals
     t.netTotal,
+    t.delivery || t.shipping || null,
     t.vatTotal,
     t.grossTotal,
     // Validation
