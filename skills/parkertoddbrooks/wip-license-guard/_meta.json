@@ -3,9 +3,15 @@
   "slug": "wip-license-guard",
   "displayName": "Wip License Guard",
   "latest": {
-    "version": "1.9.22",
-    "publishedAt": 1773507278882,
-    "commit": "https://github.com/openclaw/skills/commit/8f1d893a1bcc6126c974dceec8bc6456fd68591f"
+    "version": "1.9.41",
+    "publishedAt": 1773754810545,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.9.22",
+      "publishedAt": 1773507278882,
+      "commit": "https://github.com/openclaw/skills/commit/8f1d893a1bcc6126c974dceec8bc6456fd68591f"
+    }
+  ]
 }
