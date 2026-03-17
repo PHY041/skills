@@ -3,9 +3,15 @@
   "slug": "huo15-doc-template",
   "displayName": "Huo15 Doc Template",
   "latest": {
-    "version": "1.0.5",
-    "publishedAt": 1773494011627,
-    "commit": "https://github.com/openclaw/skills/commit/16e8f04a2168d95cfb1b75ee4d91906b46bd49da"
+    "version": "1.0.6",
+    "publishedAt": 1773584620969,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.5",
+      "publishedAt": 1773494011627,
+      "commit": "https://github.com/openclaw/skills/commit/16e8f04a2168d95cfb1b75ee4d91906b46bd49da"
+    }
+  ]
 }
