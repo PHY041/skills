@@ -26,7 +26,7 @@ $env:JISU_API_KEY="your_appkey_here"
 
 ## 脚本路径
 
-脚本文件：`skill/dream/dream.py`
+脚本文件：`skills/dream/dream.py`
 
 ## 使用方式与请求参数
 
@@ -35,7 +35,7 @@ $env:JISU_API_KEY="your_appkey_here"
 ### 1. 按关键词搜索解梦（/dream/search）
 
 ```bash
-python3 skill/dream/dream.py search '{"keyword":"鞋","pagenum":1,"pagesize":10}'
+python3 skills/dream/dream.py search '{"keyword":"鞋","pagenum":1,"pagesize":10}'
 ```
 
 请求 JSON：
@@ -99,6 +99,6 @@ python3 skill/dream/dream.py search '{"keyword":"鞋","pagenum":1,"pagesize":10}
 ## 在 OpenClaw 中的推荐用法
 
 1. 用户提问：「梦见皮鞋是什么意思？」  
-2. 代理调用：`python3 skill/dream/dream.py search '{"keyword":"皮鞋","pagenum":1,"pagesize":5}'`。  
+2. 代理调用：`python3 skills/dream/dream.py search '{"keyword":"皮鞋","pagenum":1,"pagesize":5}'`。  
 3. 从返回的 `list` 中选取与用户梦境最相关的 1–3 条 `name` / `content`，用自然语言总结含义，并加上一句风险提示（仅供参考，不要过度迷信）。  
 
