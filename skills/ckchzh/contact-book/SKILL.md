@@ -1,6 +1,8 @@
 ---
+version: "2.0.0"
 name: contact-book
 description: "Personal contact manager with groups, birthdays, and vCard export. Use when you need to store contacts (name/phone/email), organize into groups, track birthdays, search contacts, or export as CSV/vCard. Triggers on: contact, phone number, address book, birthday reminder, vCard."
+author: BytesAgain
 ---
 
 # Contact Book
@@ -11,7 +13,7 @@ Contact Book — manage personal contacts
 
 - Designed for everyday personal use
 - No external dependencies or accounts needed
-- Data stored locally — your privacy, your data
+ — your privacy, your data
 - Simple commands, powerful results
 
 ## Commands
