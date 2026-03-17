@@ -3,9 +3,15 @@
   "slug": "page-agent-claw",
   "displayName": "Page Agent Claw Controller",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1773482309485,
-    "commit": "https://github.com/openclaw/skills/commit/6c33b2b61950b90d5e804ee6d1ebe8c84ee1544a"
+    "version": "0.1.1",
+    "publishedAt": 1773594410335,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1773482309485,
+      "commit": "https://github.com/openclaw/skills/commit/6c33b2b61950b90d5e804ee6d1ebe8c84ee1544a"
+    }
+  ]
 }
